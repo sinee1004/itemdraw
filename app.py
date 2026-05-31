@@ -525,13 +525,22 @@ async def reset_all(
 ):
 
     if admin != "yes":
-        return RedirectResponse("/login", status_code=303)
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
 
     conn = get_db()
     cur = conn.cursor()
 
+    # 신청자 삭제
     cur.execute("DELETE FROM entries")
+
+    # 당첨 결과 삭제
     cur.execute("DELETE FROM winners")
+
+    # 품목 삭제
+    cur.execute("DELETE FROM items")
 
     conn.commit()
     conn.close()
