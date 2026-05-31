@@ -99,7 +99,7 @@ type="submit">
 <div class="text-center mt-3 text-muted">
 
 <small>
-장비 1개 / 악세사리 1개 / 엠블럼 2개 신청 가능
+장비 1개 / 악세사리 1개 / 엠블럼 2개 신청 가능 / 기타 품목은 3개 입찰가능
 </small>
 
 </div>
@@ -137,8 +137,22 @@ type="submit">
 
 <tr>
 
+{% if row[0] == "유찰" %}
+
+<td class="text-danger fw-bold">
+유찰
+</td>
+
+<td class="text-danger fw-bold">
+{{ row[1] }}
+</td>
+
+{% else %}
+
 <td>{{ row[0] }}</td>
 <td>{{ row[1] }}</td>
+
+{% endif %}
 
 </tr>
 

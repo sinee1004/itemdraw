@@ -59,9 +59,27 @@ rel="stylesheet">
 
 <tr>
 
+{% if row[0] == "유찰" %}
+
+<td class="text-danger fw-bold">
+🔴 유찰
+</td>
+
+<td class="text-danger fw-bold">
+{{ row[1] }}
+</td>
+
+<td class="text-danger fw-bold">
+-
+</td>
+
+{% else %}
+
 <td>{{ row[0] }}</td>
 <td>{{ row[1] }}</td>
 <td>{{ row[2] }}</td>
+
+{% endif %}
 
 </tr>
 
