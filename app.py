@@ -371,7 +371,15 @@ async def admin(
 
 
 @app.get("/draw")
-async def draw():
+async def draw(
+    admin: str = Cookie(None)
+):
+
+    if admin != "yes":
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
 
     conn = get_db()
     cur = conn.cursor()
@@ -503,6 +511,27 @@ async def update_item(
             item_id
         )
     )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )
+@app.get("/reset_all")
+async def reset_all(
+    admin: str = Cookie(None)
+):
+
+    if admin != "yes":
+        return RedirectResponse("/login", status_code=303)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM entries")
+    cur.execute("DELETE FROM winners")
 
     conn.commit()
     conn.close()
