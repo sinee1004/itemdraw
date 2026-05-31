@@ -77,66 +77,65 @@ def get_category(item_name):
     return row[0] if row else ""
 def run_draw():
 
-   
+```
+conn = get_db()
+cur = conn.cursor()
 
-    conn = get_db()
-    cur = conn.cursor()
+cur.execute("DELETE FROM winners")
 
-    cur.execute("DELETE FROM winners")
+cur.execute("""
+SELECT item_name, winner_count
+FROM items
+""")
 
-    cur.execute("""
-    SELECT item_name,winner_count
-    FROM items
-    """)
+items = cur.fetchall()
 
-    items = cur.fetchall()
-
-    for item_name, winner_count in items:
-
-        cur.execute(
-            """
-            SELECT nickname,item_name,entry_number
-            FROM entries
-            WHERE item_name=?
-            """,
-            (item_name,)
-        )
-
-        applicants = cur.fetchall()
-
-        if not applicants:
+for item_name, winner_count in items:
 
     cur.execute(
         """
-        INSERT INTO winners
-        (nickname,item_name,entry_number)
-        VALUES (?,?,?)
+        SELECT nickname,item_name,entry_number
+        FROM entries
+        WHERE item_name=?
         """,
-        ("유찰", item_name, "-")
+        (item_name,)
     )
 
-    
-    continue
-        selected = random.sample(
-            applicants,
-            min(winner_count, len(applicants))
+    applicants = cur.fetchall()
+
+    if not applicants:
+
+        cur.execute(
+            """
+            INSERT INTO winners
+            (nickname,item_name,entry_number)
+            VALUES (?,?,?)
+            """,
+            ("유찰", item_name, "-")
         )
 
-        for winner in selected:
+        continue
 
-            cur.execute(
-                """
-                INSERT INTO winners
-                (nickname,item_name,entry_number)
-                VALUES (?,?,?)
-                """,
-                winner
-            )
+    selected = random.sample(
+        applicants,
+        min(winner_count, len(applicants))
+    )
 
-    conn.commit()
-    conn.close()
+    for winner in selected:
 
-    
+        cur.execute(
+            """
+            INSERT INTO winners
+            (nickname,item_name,entry_number)
+            VALUES (?,?,?)
+            """,
+            winner
+        )
+
+conn.commit()
+conn.close()
+```
+   
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
