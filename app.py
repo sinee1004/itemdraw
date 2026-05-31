@@ -1,0 +1,503 @@
+from fastapi import FastAPI, Request, Form, Cookie
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+import sqlite3
+import random
+
+app = FastAPI()
+
+templates = Jinja2Templates(directory="templates")
+
+ADMIN_PASSWORD = "1234"
+
+
+def get_db():
+    return sqlite3.connect("itemdraw.db")
+
+
+def init_db():
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS items(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_name TEXT,
+        category TEXT,
+        winner_count INTEGER
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS entries(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nickname TEXT,
+        item_name TEXT,
+        entry_number TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS winners(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nickname TEXT,
+        item_name TEXT,
+        entry_number TEXT
+    )
+    """)
+
+    cur.execute("SELECT COUNT(*) FROM items")
+
+    if cur.fetchone()[0] == 0:
+
+        cur.execute("""
+        INSERT INTO items (item_name, category, winner_count)
+        VALUES ('전설의 검','장비',1)
+        """)
+
+        cur.execute("""
+        INSERT INTO items (item_name, category, winner_count)
+        VALUES ('용의 반지','악세사리',1)
+        """)
+
+        cur.execute("""
+        INSERT INTO items (item_name, category, winner_count)
+        VALUES ('영웅 엠블럼','엠블럼',2)
+        """)
+
+    conn.commit()
+    conn.close()
+
+
+init_db()
+
+
+def get_category(item_name):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT category FROM items WHERE item_name=?",
+        (item_name,)
+    )
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    return row[0] if row else ""
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page():
+
+    return """
+    <html>
+    <body>
+    <h2>관리자 로그인</h2>
+
+    <form action="/login" method="post">
+    비밀번호
+    <input type="password" name="password">
+    <button type="submit">로그인</button>
+    </form>
+
+    </body>
+    </html>
+    """
+
+
+@app.post("/login")
+async def login(password: str = Form(...)):
+
+    if password == ADMIN_PASSWORD:
+
+        response = RedirectResponse(
+            "/admin",
+            status_code=303
+        )
+
+        response.set_cookie(
+            key="admin",
+            value="yes"
+        )
+
+        return response
+
+    return HTMLResponse(
+        "<h2>비밀번호가 틀렸습니다.</h2>"
+    )
+
+
+@app.get("/logout")
+async def logout():
+
+    response = RedirectResponse(
+        "/login",
+        status_code=303
+    )
+
+    response.delete_cookie("admin")
+
+    return response
+
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT item_name, category
+    FROM items
+    ORDER BY category
+    """)
+
+    items = cur.fetchall()
+
+    conn.close()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"items": items}
+    )
+
+
+@app.post("/apply")
+async def apply(
+    nickname: str = Form(...),
+    item_name: str = Form(...)
+):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    category = get_category(item_name)
+
+    # 동일 품목 중복 신청 방지
+    cur.execute(
+        """
+        SELECT COUNT(*)
+        FROM entries
+        WHERE nickname=?
+        AND item_name=?
+        """,
+        (nickname, item_name)
+    )
+
+    already = cur.fetchone()[0]
+
+    if already > 0:
+
+        conn.close()
+
+        return {
+            "success": False,
+            "message": "이미 신청한 품목입니다."
+        }
+
+    cur.execute(
+        "SELECT item_name FROM entries WHERE nickname=?",
+        (nickname,)
+    )
+
+    rows = cur.fetchall()
+
+    equip = 0
+    accessory = 0
+    emblem = 0
+
+    for row in rows:
+
+        cat = get_category(row[0])
+
+        if cat == "장비":
+            equip += 1
+
+        elif cat == "악세사리":
+            accessory += 1
+
+        elif cat == "엠블럼":
+            emblem += 1
+
+    if category == "장비" and equip >= 1:
+        return {"success": False, "message": "장비는 1개만 신청 가능합니다."}
+
+    if category == "악세사리" and accessory >= 1:
+        return {"success": False, "message": "악세사리는 1개만 신청 가능합니다."}
+
+    if category == "엠블럼" and emblem >= 2:
+        return {"success": False, "message": "엠블럼은 2개만 신청 가능합니다."}
+
+    cur.execute(
+        """
+        INSERT INTO entries
+        (nickname,item_name,entry_number)
+        VALUES (?,?,?)
+        """,
+        (nickname, item_name, "")
+    )
+
+    entry_id = cur.lastrowid
+
+    entry_number = f"A-{entry_id:04d}"
+
+    cur.execute(
+        """
+        UPDATE entries
+        SET entry_number=?
+        WHERE id=?
+        """,
+        (entry_number, entry_id)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "entry_number": entry_number
+    }
+
+
+@app.post("/add_item")
+async def add_item(
+    item_name: str = Form(...),
+    category: str = Form(...),
+    winner_count: int = Form(...)
+):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        INSERT INTO items
+        (item_name,category,winner_count)
+        VALUES (?,?,?)
+        """,
+        (item_name, category, winner_count)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )
+
+
+@app.get("/delete_item/{item_id}")
+async def delete_item(
+    item_id: int,
+    admin: str = Cookie(None)
+):
+
+    if admin != "yes":
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM items WHERE id=?",
+        (item_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin(
+    request: Request,
+    admin: str = Cookie(None)
+):
+
+    if admin != "yes":
+        return RedirectResponse("/login", status_code=303)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT nickname,item_name,entry_number
+    FROM entries
+    ORDER BY id DESC
+    """)
+
+    entries = cur.fetchall()
+
+    cur.execute("""
+    SELECT id,item_name,category,winner_count
+    FROM items
+    """)
+
+    items = cur.fetchall()
+
+    conn.close()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={
+            "entries": entries,
+            "items": items
+        }
+    )
+
+
+@app.get("/draw")
+async def draw():
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM winners")
+
+    cur.execute("""
+    SELECT item_name,winner_count
+    FROM items
+    """)
+
+    items = cur.fetchall()
+
+    for item_name, winner_count in items:
+
+        cur.execute(
+            """
+            SELECT nickname,item_name,entry_number
+            FROM entries
+            WHERE item_name=?
+            """,
+            (item_name,)
+        )
+
+        applicants = cur.fetchall()
+
+        if not applicants:
+            continue
+
+        selected = random.sample(
+            applicants,
+            min(winner_count, len(applicants))
+        )
+
+        for winner in selected:
+
+            cur.execute(
+                """
+                INSERT INTO winners
+                (nickname,item_name,entry_number)
+                VALUES (?,?,?)
+                """,
+                winner
+            )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse("/results", status_code=303)
+
+
+@app.get("/results", response_class=HTMLResponse)
+async def results(request: Request):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT nickname,item_name,entry_number
+    FROM winners
+    ORDER BY item_name
+    """)
+
+    winners = cur.fetchall()
+
+    conn.close()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="results.html",
+        context={
+            "winners": winners
+        }
+    )
+@app.get("/edit_item/{item_id}", response_class=HTMLResponse)
+async def edit_item_page(
+    request: Request,
+    item_id: int,
+    admin: str = Cookie(None)
+):
+
+    if admin != "yes":
+        return RedirectResponse("/login", status_code=303)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT id,item_name,category,winner_count
+        FROM items
+        WHERE id=?
+        """,
+        (item_id,)
+    )
+
+    item = cur.fetchone()
+
+    conn.close()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="edit_item.html",
+        context={"item": item}
+    )
+@app.post("/update_item")
+async def update_item(
+    item_id: int = Form(...),
+    item_name: str = Form(...),
+    category: str = Form(...),
+    winner_count: int = Form(...)
+):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE items
+        SET item_name=?,
+            category=?,
+            winner_count=?
+        WHERE id=?
+        """,
+        (
+            item_name,
+            category,
+            winner_count,
+            item_id
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )
