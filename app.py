@@ -454,9 +454,12 @@ async def auction_start(
 async def countdown():
 
     global draw_time
+    global auction_started
 
-    if draw_time is None:
-        return {"remaining": 0}
+    if not auction_started:
+        return {
+            "remaining": -1
+        }
 
     remain = int(
         (draw_time - datetime.now()).total_seconds()
@@ -465,7 +468,9 @@ async def countdown():
     if remain < 0:
         remain = 0
 
-    return {"remaining": remain}
+    return {
+        "remaining": remain
+    }
 
 @app.get("/draw")
 async def draw(
