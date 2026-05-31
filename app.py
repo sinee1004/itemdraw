@@ -1,5 +1,3 @@
-from threading import Timer
-from datetime import datetime, timedelta
 from fastapi import FastAPI, Request, Form, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -12,8 +10,6 @@ templates = Jinja2Templates(directory="templates")
 
 ADMIN_PASSWORD = "1234"
 
-auction_started = False
-draw_time = None
 
 
 def get_db():
@@ -79,8 +75,7 @@ def get_category(item_name):
     return row[0] if row else ""
 def run_draw():
 
-    global auction_started
-    global draw_time
+   
 
     conn = get_db()
     cur = conn.cursor()
@@ -129,8 +124,7 @@ def run_draw():
     conn.commit()
     conn.close()
 
-    auction_started = False
-    draw_time = None
+    
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
@@ -412,59 +406,6 @@ async def admin(
             "items": items
         }
     )
-@app.get("/auction_start")
-async def auction_start(
-    admin: str = Cookie(None)
-):
-
-    global auction_started
-    global draw_time
-
-    if admin != "yes":
-        return RedirectResponse(
-            "/login",
-            status_code=303
-        )
-
-    if auction_started:
-        return RedirectResponse(
-            "/admin",
-            status_code=303
-        )
-
-    auction_started = True
-
-    draw_time = datetime.now() + timedelta(minutes=10)
-
-    Timer(600, run_draw).start()
-
-    return RedirectResponse(
-        "/admin",
-        status_code=303
-    )
-
-
-@app.get("/countdown")
-async def countdown():
-
-    global draw_time
-    global auction_started
-
-    if not auction_started:
-        return {
-            "remaining": -1
-        }
-
-    remain = int(
-        (draw_time - datetime.now()).total_seconds()
-    )
-
-    if remain < 0:
-        remain = 0
-
-    return {
-        "remaining": remain
-    }
 
 @app.get("/draw")
 async def draw(

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 
 <head>
@@ -9,7 +10,7 @@
 name="viewport"
 content="width=device-width, initial-scale=1.0">
 
-<title>관리자 페이지</title>
+<title>관리자 페이지 test999</title>
 
 <link
 href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -21,53 +22,37 @@ rel="stylesheet">
 
 <div class="container mt-4">
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-
 <h1>⚙ 관리자 페이지</h1>
-<div id="timer" class="alert alert-warning mt-3">
-대기중
-</div>
-<div>
 
-<a href="/auction_start"
-onclick="return confirm('경매를 시작하면 신청이 마감되고 10분 후 자동 추첨됩니다. 진행하시겠습니까?')">
 
-<button class="btn btn-primary">
-⏰ 경매 시작
-</button>
+
+<div class="d-flex gap-2 mb-4">
+
+<a href="/draw"
+class="btn btn-primary"
+onclick="return confirm('즉시 추첨하시겠습니까?')">
+🎲 추첨 실행
 </a>
 
-<a href="/results">
-<button class="btn btn-success">
-🏆 결과 보기
-</button>
-</a>
+<a href="/results"
+class="btn btn-success">
+🏆 결과 보기 </a>
 
 <a href="/reset_all"
+class="btn btn-danger"
 onclick="return confirm('품목, 신청자, 당첨결과를 모두 삭제하시겠습니까?')">
+🗑 전체 초기화 </a>
 
-<button class="btn btn-danger">
-🗑 전체 초기화
-</button>
-
-</a>
-
-<a href="/logout">
-<button class="btn btn-secondary">
-로그아웃
-</button>
-</a>
-
-</div>
+<a href="/logout"
+class="btn btn-secondary">
+로그아웃 </a>
 
 </div>
 
 <div class="card shadow mb-4">
 
 <div class="card-header bg-primary text-white">
-
 품목 추가
-
 </div>
 
 <div class="card-body">
@@ -147,9 +132,7 @@ type="submit">
 <div class="card shadow mb-4">
 
 <div class="card-header bg-success text-white">
-
 신청자 목록
-
 </div>
 
 <div class="card-body">
@@ -191,9 +174,7 @@ type="submit">
 <div class="card shadow">
 
 <div class="card-header bg-dark text-white">
-
 등록 품목
-
 </div>
 
 <div class="card-body">
@@ -227,29 +208,15 @@ type="submit">
 
 <td>
 
-<a href="/edit_item/{{ item[0] }}">
-
-<button
+<a href="/edit_item/{{ item[0] }}"
 class="btn btn-warning btn-sm">
-
-수정
-
-</button>
-
-</a>
+수정 </a>
 
 <a
 href="/delete_item/{{ item[0] }}"
+class="btn btn-danger btn-sm"
 onclick="return confirm('삭제하시겠습니까?')">
-
-<button
-class="btn btn-danger btn-sm">
-
-삭제
-
-</button>
-
-</a>
+삭제 </a>
 
 </td>
 
@@ -266,36 +233,9 @@ class="btn btn-danger btn-sm">
 </div>
 
 </div>
-<script>
 
-async function updateTimer(){
 
-    const res = await fetch('/countdown');
-    const data = await res.json();
 
-    let sec = data.remaining;
-
-    if(sec <= 0){
-
-        document.getElementById('timer').innerHTML =
-        "추첨 대기중";
-
-        return;
-    }
-
-    let min = Math.floor(sec / 60);
-    let remain = sec % 60;
-
-    document.getElementById('timer').innerHTML =
-    `⏰ 추첨까지 ${min}분 ${remain}초`;
-
-}
-
-setInterval(updateTimer,1000);
-
-updateTimer();
-
-</script>
 </body>
 
 </html>
