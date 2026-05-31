@@ -1,3 +1,5 @@
+from unicodedata import category
+
 from fastapi import FastAPI, Request, Form, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -103,8 +105,17 @@ def run_draw():
         applicants = cur.fetchall()
 
         if not applicants:
-            continue
 
+    cur.execute(
+        """
+        INSERT INTO winners
+        (nickname,item_name,entry_number)
+        VALUES (?,?,?)
+        """,
+        ("유찰", item_name, "-")
+    )
+
+    continue
         selected = random.sample(
             applicants,
             min(winner_count, len(applicants))
@@ -258,6 +269,7 @@ async def apply(
     equip = 0
     accessory = 0
     emblem = 0
+    etc = 0
 
     for row in rows:
 
@@ -272,6 +284,9 @@ async def apply(
         elif cat == "엠블럼":
             emblem += 1
 
+        elif cat == "기타":
+            etc += 1
+
     if category == "장비" and equip >= 1:
         return {"success": False, "message": "장비는 1개만 신청 가능합니다."}
 
@@ -281,6 +296,8 @@ async def apply(
     if category == "엠블럼" and emblem >= 2:
         return {"success": False, "message": "엠블럼은 2개만 신청 가능합니다."}
 
+    if category == "기타" and etc >= 3:
+        return {"success": False, "message": "기타 품목은 3개만 신청 가능합니다."}
     cur.execute(
         """
         INSERT INTO entries
