@@ -228,8 +228,6 @@ ${data.message}
 </script>
 <script>
 
-let drawFinished = false;
-
 async function updateTimer(){
 
     try{
@@ -242,17 +240,7 @@ async function updateTimer(){
         if(sec <= 0){
 
             document.getElementById("timer").innerHTML =
-            "🏆 추첨 완료";
-
-            if(!drawFinished){
-
-                drawFinished = true;
-
-                setTimeout(()=>{
-                    location.reload();
-                },2000);
-
-            }
+            "신청 가능";
 
             return;
         }
