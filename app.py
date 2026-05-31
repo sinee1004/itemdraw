@@ -158,14 +158,24 @@ async def home(request: Request):
 
     items = cur.fetchall()
 
+    cur.execute("""
+    SELECT nickname,item_name,entry_number
+    FROM winners
+    ORDER BY item_name
+    """)
+
+    winners = cur.fetchall()
+
     conn.close()
 
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"items": items}
+        context={
+            "items": items,
+            "winners": winners
+        }
     )
-
 
 @app.post("/apply")
 async def apply(
