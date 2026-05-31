@@ -225,13 +225,7 @@ async def apply(
     item_name: str = Form(...)
 ):
 
-    global auction_started
-
-    if auction_started:
-        return {
-            "success": False,
-            "message": "경매가 시작되어 신청이 마감되었습니다."
-        }
+    
 
     conn = get_db()
     cur = conn.cursor()

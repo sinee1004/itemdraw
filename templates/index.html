@@ -36,9 +36,7 @@ rel="stylesheet">
 </div>
 
 <div class="card-body">
-<div id="timer" class="alert alert-info text-center">
-추첨 대기중
-</div>
+
 <form id="applyForm">
 
 <div class="mb-3">
@@ -226,46 +224,7 @@ ${data.message}
 });
 
 </script>
-<script>
 
-async function updateTimer(){
-
-    try{
-
-        const res = await fetch('/countdown');
-        const data = await res.json();
-
-        let sec = data.remaining;
-
-        if(sec <= 0){
-
-            document.getElementById("timer").innerHTML =
-            "신청 가능";
-
-            return;
-        }
-
-        let min = Math.floor(sec / 60);
-        let remain = sec % 60;
-
-        document.getElementById("timer").innerHTML =
-        `⏰ 추첨까지 ${min}분 ${remain}초`;
-
-    }
-    catch(err){
-
-        document.getElementById("timer").innerHTML =
-        "신청 가능";
-
-    }
-
-}
-
-setInterval(updateTimer,1000);
-
-updateTimer();
-
-</script>
 </body>
 
 </html>
