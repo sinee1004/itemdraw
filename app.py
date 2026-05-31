@@ -560,3 +560,52 @@ async def reset_all(
         "/admin",
         status_code=303
     )
+@app.post("/my_entries")
+async def my_entries(
+    nickname: str = Form(...)
+):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT id, item_name, entry_number
+        FROM entries
+        WHERE nickname=?
+        ORDER BY id DESC
+        """,
+        (nickname,)
+    )
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return {
+        "entries": [
+            {
+                "id": row[0],
+                "item_name": row[1],
+                "entry_number": row[2]
+            }
+            for row in rows
+        ]
+    }
+@app.post("/cancel_entry")
+async def cancel_entry(
+    entry_id: int = Form(...)
+):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM entries WHERE id=?",
+        (entry_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {"success": True}

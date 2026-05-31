@@ -103,7 +103,39 @@ type="submit">
 </small>
 
 </div>
+<hr>
 
+<div class="card shadow mt-4">
+
+<div class="card-header bg-info text-white">
+내 신청 조회 / 취소
+</div>
+
+<div class="card-body">
+
+<div class="input-group mb-3">
+
+<input
+class="form-control"
+type="text"
+id="searchNickname"
+placeholder="닉네임 입력">
+
+<button
+class="btn btn-primary"
+onclick="loadEntries()">
+
+조회
+
+</button>
+
+</div>
+
+<div id="myEntries"></div>
+
+</div>
+
+</div>
 <div class="card shadow-lg mt-5">
 
 <div class="card-header bg-warning text-dark text-center">
@@ -184,60 +216,128 @@ type="submit">
 
 <script>
 
-document
-.getElementById("applyForm")
+// 신청하기
+document.getElementById("applyForm")
 .addEventListener("submit", async function(e){
 
-e.preventDefault();
+    e.preventDefault();
 
-const formData = new FormData(this);
+    const formData = new FormData(this);
 
-const response = await fetch("/apply",{
-method:"POST",
-body:formData
+    const response = await fetch("/apply", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+
+        document.getElementById("result").innerHTML = `
+        <div class="alert alert-success text-center">
+            <h5>신청 완료</h5>
+            <hr>
+            접수번호
+            <h3 class="text-success">
+                ${data.entry_number}
+            </h3>
+        </div>
+        `;
+
+    } else {
+
+        document.getElementById("result").innerHTML = `
+        <div class="alert alert-danger text-center">
+            ${data.message}
+        </div>
+        `;
+    }
+
 });
 
-const data = await response.json();
 
-if(data.success){
+// 내 신청 조회
+async function loadEntries() {
 
-document.getElementById("result").innerHTML =
+    const nickname = document.getElementById("searchNickname").value;
 
-`
-<div class="alert alert-success text-center">
+    const formData = new FormData();
+    formData.append("nickname", nickname);
 
-<h5>
-신청 완료
-</h5>
+    const response = await fetch("/my_entries", {
+        method: "POST",
+        body: formData
+    });
 
-<hr>
+    const data = await response.json();
 
-접수번호
+    let html = "";
 
-<h3 class="text-success">
-${data.entry_number}
-</h3>
+    if (data.entries.length === 0) {
 
-</div>
-`;
+        html = `
+        <div class="alert alert-warning">
+            신청 내역이 없습니다.
+        </div>
+        `;
 
-}else{
+    } else {
 
-document.getElementById("result").innerHTML =
+        html = `
+        <table class="table table-bordered">
+            <tr>
+                <th>품목</th>
+                <th>접수번호</th>
+                <th>관리</th>
+            </tr>
+        `;
 
-`
-<div class="alert alert-danger text-center">
+        data.entries.forEach(row => {
 
-${data.message}
+            html += `
+            <tr>
+                <td>${row.item_name}</td>
+                <td>${row.entry_number}</td>
+                <td>
+                    <button
+                        class="btn btn-danger btn-sm"
+                        onclick="cancelEntry(${row.id})">
+                        취소
+                    </button>
+                </td>
+            </tr>
+            `;
+        });
 
-</div>
-`;
+        html += "</table>";
+    }
 
+    document.getElementById("myEntries").innerHTML = html;
 }
 
-});
+
+// 신청 취소
+async function cancelEntry(id) {
+
+    if (!confirm("신청을 취소하시겠습니까?")) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("entry_id", id);
+
+    await fetch("/cancel_entry", {
+        method: "POST",
+        body: formData
+    });
+
+    alert("취소되었습니다.");
+
+    loadEntries();
+}
 
 </script>
+
 
 </body>
 
