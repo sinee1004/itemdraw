@@ -75,67 +75,75 @@ def get_category(item_name):
     conn.close()
 
     return row[0] if row else ""
+
+
+또는 코드 블록(```` `)이 실제 파일에 들어갔을 가능성이 있어.
+
+---
+
+### 해야 할 일
+
+`app.py`에서 `run_draw()` 전체를 삭제하고 아래 코드로 교체해.
+
+```python
 def run_draw():
 
-```
-conn = get_db()
-cur = conn.cursor()
+    conn = get_db()
+    cur = conn.cursor()
 
-cur.execute("DELETE FROM winners")
+    cur.execute("DELETE FROM winners")
 
-cur.execute("""
-SELECT item_name, winner_count
-FROM items
-""")
+    cur.execute("""
+    SELECT item_name, winner_count
+    FROM items
+    """)
 
-items = cur.fetchall()
+    items = cur.fetchall()
 
-for item_name, winner_count in items:
-
-    cur.execute(
-        """
-        SELECT nickname,item_name,entry_number
-        FROM entries
-        WHERE item_name=?
-        """,
-        (item_name,)
-    )
-
-    applicants = cur.fetchall()
-
-    if not applicants:
+    for item_name, winner_count in items:
 
         cur.execute(
             """
-            INSERT INTO winners
-            (nickname,item_name,entry_number)
-            VALUES (?,?,?)
+            SELECT nickname,item_name,entry_number
+            FROM entries
+            WHERE item_name=?
             """,
-            ("유찰", item_name, "-")
+            (item_name,)
         )
 
-        continue
+        applicants = cur.fetchall()
 
-    selected = random.sample(
-        applicants,
-        min(winner_count, len(applicants))
-    )
+        if not applicants:
 
-    for winner in selected:
+            cur.execute(
+                """
+                INSERT INTO winners
+                (nickname,item_name,entry_number)
+                VALUES (?,?,?)
+                """,
+                ("유찰", item_name, "-")
+            )
 
-        cur.execute(
-            """
-            INSERT INTO winners
-            (nickname,item_name,entry_number)
-            VALUES (?,?,?)
-            """,
-            winner
+            continue
+
+        selected = random.sample(
+            applicants,
+            min(winner_count, len(applicants))
         )
 
-conn.commit()
-conn.close()
-```
-   
+        for winner in selected:
+
+            cur.execute(
+                """
+                INSERT INTO winners
+                (nickname,item_name,entry_number)
+                VALUES (?,?,?)
+                """,
+                winner
+            )
+
+    conn.commit()
+    conn.close()
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
