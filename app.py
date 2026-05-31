@@ -115,6 +115,7 @@ def run_draw():
         ("유찰", item_name, "-")
     )
 
+    
     continue
         selected = random.sample(
             applicants,
