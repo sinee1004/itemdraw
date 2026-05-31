@@ -1,3 +1,5 @@
+from threading import Timer
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Request, Form, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -9,6 +11,9 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 ADMIN_PASSWORD = "1234"
+
+auction_started = False
+draw_time = None
 
 
 def get_db():
@@ -49,22 +54,6 @@ def init_db():
 
     cur.execute("SELECT COUNT(*) FROM items")
 
-    if cur.fetchone()[0] == 0:
-
-        cur.execute("""
-        INSERT INTO items (item_name, category, winner_count)
-        VALUES ('전설의 검','장비',1)
-        """)
-
-        cur.execute("""
-        INSERT INTO items (item_name, category, winner_count)
-        VALUES ('용의 반지','악세사리',1)
-        """)
-
-        cur.execute("""
-        INSERT INTO items (item_name, category, winner_count)
-        VALUES ('영웅 엠블럼','엠블럼',2)
-        """)
 
     conn.commit()
     conn.close()
@@ -88,7 +77,60 @@ def get_category(item_name):
     conn.close()
 
     return row[0] if row else ""
+def run_draw():
 
+    global auction_started
+    global draw_time
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM winners")
+
+    cur.execute("""
+    SELECT item_name,winner_count
+    FROM items
+    """)
+
+    items = cur.fetchall()
+
+    for item_name, winner_count in items:
+
+        cur.execute(
+            """
+            SELECT nickname,item_name,entry_number
+            FROM entries
+            WHERE item_name=?
+            """,
+            (item_name,)
+        )
+
+        applicants = cur.fetchall()
+
+        if not applicants:
+            continue
+
+        selected = random.sample(
+            applicants,
+            min(winner_count, len(applicants))
+        )
+
+        for winner in selected:
+
+            cur.execute(
+                """
+                INSERT INTO winners
+                (nickname,item_name,entry_number)
+                VALUES (?,?,?)
+                """,
+                winner
+            )
+
+    conn.commit()
+    conn.close()
+
+    auction_started = False
+    draw_time = None
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
@@ -182,6 +224,14 @@ async def apply(
     nickname: str = Form(...),
     item_name: str = Form(...)
 ):
+
+    global auction_started
+
+    if auction_started:
+        return {
+            "success": False,
+            "message": "경매가 시작되어 신청이 마감되었습니다."
+        }
 
     conn = get_db()
     cur = conn.cursor()
@@ -368,7 +418,54 @@ async def admin(
             "items": items
         }
     )
+@app.get("/auction_start")
+async def auction_start(
+    admin: str = Cookie(None)
+):
 
+    global auction_started
+    global draw_time
+
+    if admin != "yes":
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
+
+    if auction_started:
+        return RedirectResponse(
+            "/admin",
+            status_code=303
+        )
+
+    auction_started = True
+
+    draw_time = datetime.now() + timedelta(minutes=10)
+
+    Timer(600, run_draw).start()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )
+
+
+@app.get("/countdown")
+async def countdown():
+
+    global draw_time
+
+    if draw_time is None:
+        return {"remaining": 0}
+
+    remain = int(
+        (draw_time - datetime.now()).total_seconds()
+    )
+
+    if remain < 0:
+        remain = 0
+
+    return {"remaining": remain}
 
 @app.get("/draw")
 async def draw(
@@ -381,55 +478,12 @@ async def draw(
             status_code=303
         )
 
-    conn = get_db()
-    cur = conn.cursor()
+    run_draw()
 
-    cur.execute("DELETE FROM winners")
-
-    cur.execute("""
-    SELECT item_name,winner_count
-    FROM items
-    """)
-
-    items = cur.fetchall()
-
-    for item_name, winner_count in items:
-
-        cur.execute(
-            """
-            SELECT nickname,item_name,entry_number
-            FROM entries
-            WHERE item_name=?
-            """,
-            (item_name,)
-        )
-
-        applicants = cur.fetchall()
-
-        if not applicants:
-            continue
-
-        selected = random.sample(
-            applicants,
-            min(winner_count, len(applicants))
-        )
-
-        for winner in selected:
-
-            cur.execute(
-                """
-                INSERT INTO winners
-                (nickname,item_name,entry_number)
-                VALUES (?,?,?)
-                """,
-                winner
-            )
-
-    conn.commit()
-    conn.close()
-
-    return RedirectResponse("/results", status_code=303)
-
+    return RedirectResponse(
+        "/results",
+        status_code=303
+    )
 
 @app.get("/results", response_class=HTMLResponse)
 async def results(request: Request):

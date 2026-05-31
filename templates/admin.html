@@ -24,12 +24,16 @@ rel="stylesheet">
 <div class="d-flex justify-content-between align-items-center mb-4">
 
 <h1>⚙ 관리자 페이지</h1>
-
+<div id="timer" class="alert alert-warning mt-3">
+대기중
+</div>
 <div>
 
-<a href="/draw">
+<a href="/auction_start"
+onclick="return confirm('경매를 시작하면 신청이 마감되고 10분 후 자동 추첨됩니다. 진행하시겠습니까?')">
+
 <button class="btn btn-primary">
-🎲 추첨 실행
+⏰ 경매 시작
 </button>
 </a>
 
@@ -262,7 +266,36 @@ class="btn btn-danger btn-sm">
 </div>
 
 </div>
+<script>
 
+async function updateTimer(){
+
+    const res = await fetch('/countdown');
+    const data = await res.json();
+
+    let sec = data.remaining;
+
+    if(sec <= 0){
+
+        document.getElementById('timer').innerHTML =
+        "추첨 대기중";
+
+        return;
+    }
+
+    let min = Math.floor(sec / 60);
+    let remain = sec % 60;
+
+    document.getElementById('timer').innerHTML =
+    `⏰ 추첨까지 ${min}분 ${remain}초`;
+
+}
+
+setInterval(updateTimer,1000);
+
+updateTimer();
+
+</script>
 </body>
 
 </html>
