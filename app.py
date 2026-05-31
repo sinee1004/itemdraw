@@ -77,15 +77,7 @@ def get_category(item_name):
     return row[0] if row else ""
 
 
-또는 코드 블록(```` `)이 실제 파일에 들어갔을 가능성이 있어.
 
----
-
-### 해야 할 일
-
-`app.py`에서 `run_draw()` 전체를 삭제하고 아래 코드로 교체해.
-
-```python
 def run_draw():
 
     conn = get_db()
