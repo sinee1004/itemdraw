@@ -15,11 +15,211 @@ content="width=device-width, initial-scale=1.0">
 href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
 rel="stylesheet">
 
+<style>
+
+body{
+    background:url('/static/background.jpg')
+              no-repeat center center fixed;
+    background-size:cover;
+    min-height:100vh;
+}
+
+.card{
+    background:rgba(255,255,255,0.88);
+    border:2px solid rgba(255,215,0,.45);
+    border-radius:25px;
+    backdrop-filter:blur(10px);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.25);
+}
+
+.guild-title{
+    color:#fff;
+    font-size:5rem;
+    font-weight:900;
+    letter-spacing:4px;
+
+    text-shadow:
+        0 0 10px rgba(255,215,0,.8),
+        0 0 20px rgba(255,215,0,.5),
+        0 4px 10px rgba(0,0,0,.8);
+}
+
+.guild-subtitle{
+    color:#ffd700;
+    font-size:1.8rem;
+    font-weight:700;
+}
+
+.card-header{
+    font-weight:800;
+}
+
+.btn{
+    transition:all .25s ease;
+}
+
+.btn:hover{
+    transform:translateY(-3px);
+}
+
+.table{
+    background:white;
+}
+
+/* ===== 킹덤아케인 RPG 스타일 ===== */
+
+.bg-success{
+    background:linear-gradient(
+        180deg,
+        #45d64d,
+        #18852d
+    ) !important;
+}
+
+.bg-info{
+    background:linear-gradient(
+        180deg,
+        #4fc3ff,
+        #166bd8
+    ) !important;
+}
+
+.bg-warning{
+    background:linear-gradient(
+        180deg,
+        #ffd75a,
+        #d89b00
+    ) !important;
+}
+
+/* 카드 빛 효과 */
+.card{
+    position:relative;
+    overflow:hidden;
+}
+
+.card::before{
+    content:"";
+
+    position:absolute;
+
+    top:0;
+    left:-100%;
+
+    width:100%;
+    height:100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.25),
+            transparent
+        );
+
+    transition:1s;
+}
+
+.card:hover::before{
+    left:100%;
+}
+
+/* 버튼 */
+.btn-success{
+    font-weight:800;
+    border:none;
+    border-radius:14px;
+}
+
+.btn-primary{
+    border:none;
+    border-radius:14px;
+}
+
+.btn-danger{
+    border-radius:10px;
+}
+
+/* 입력창 */
+.form-control,
+.form-select{
+    border-radius:12px;
+}
+
+/* 테이블 */
+.table thead{
+    background:#fff4cb;
+}
+
+.table th{
+    color:#7c5a00;
+    font-weight:800;
+}
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+
+    background:rgba(0,0,0,0.20);
+
+    z-index:-1;
+}
+.guild-title{
+    animation: glow 2s infinite alternate;
+}
+
+@keyframes glow{
+    from{
+        text-shadow:
+            0 0 10px rgba(255,215,0,.7),
+            0 0 20px rgba(255,215,0,.5);
+    }
+
+    to{
+        text-shadow:
+            0 0 20px rgba(255,215,0,1),
+            0 0 40px rgba(255,215,0,.8);
+    }
+}
+</style>
+
+
 </head>
 
-<body class="bg-light">
+<body>
 
 <div class="container mt-5">
+
+<div class="text-center mb-4">
+
+<h1 class="guild-title">
+👑 킹덤아케인 👑
+</h1>
+
+<div class="guild-subtitle">
+우와모험단 길드 이벤트 사이트
+</div>
+
+<div class="mt-3">
+
+<span class="badge bg-warning text-dark p-2 fs-6">
+⚖️ 공정한 추첨
+</span>
+
+<span class="badge bg-success p-2 fs-6">
+🎁 길드 이벤트
+</span>
+
+<span class="badge bg-primary p-2 fs-6">
+👥 전원 참여
+</span>
+
+</div>
+</div>
+
+</div>
 
 <div class="row justify-content-center">
 
@@ -30,7 +230,7 @@ rel="stylesheet">
 <div class="card-header bg-success text-white text-center">
 
 <h3 class="mb-0">
-🎁 아이템 추첨 신청
+⚔️ 아이템 추첨 신청
 </h3>
 
 </div>
@@ -130,7 +330,7 @@ type="submit">
 <div class="card shadow mt-4">
 
 <div class="card-header bg-info text-white">
-내 신청 조회 / 취소
+📜 내 신청 조회 / 취소
 </div>
 
 <div class="card-body">
@@ -163,7 +363,7 @@ onclick="loadEntries()">
 <div class="card-header bg-warning text-dark text-center">
 
 <h3 class="mb-0">
-🏆 당첨 결과
+👑 당첨 결과
 </h3>
 
 </div>
@@ -263,12 +463,7 @@ document.getElementById("applyForm")
 
         document.getElementById("result").innerHTML = `
         <div class="alert alert-success text-center">
-            <h5>신청 완료</h5>
-            <hr>
-            접수번호
-            <h3 class="text-success">
-                ${data.entry_number}
-            </h3>
+            <h5>✅ 신청이 완료되었습니다</h5>
         </div>
         `;
 
