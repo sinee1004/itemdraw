@@ -341,17 +341,35 @@ body::before{
 
 .guide-item{
 
-    background:white;
+    display:flex;
 
-    border:1px solid #e8d28a;
+    justify-content:center;
 
-    border-radius:10px;
+    align-items:center;
 
-    padding:10px 12px;
+    text-align:center;
 
-    font-weight:700;
+    min-height:70px;
 
-    transition:.2s;
+    background:
+        linear-gradient(
+            180deg,
+            #ffffff,
+            #f4f4f4
+        );
+
+    border:2px solid #d4af37;
+
+    border-radius:12px;
+
+    font-size:24px;
+
+    font-weight:900;
+
+    color:#2b2b2b;
+
+    box-shadow:
+        0 3px 10px rgba(0,0,0,.08);
 }
 
 .guide-item:hover{
