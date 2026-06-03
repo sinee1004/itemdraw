@@ -62,18 +62,21 @@ required>
 
 <select
 class="form-select"
-name="item_name">
+name="item_name"
+id="itemSelect">
 
 {% for item in items %}
 
-<option value="{{ item[0] }}">
+<option
+value="{{ item[0] }}"
+data-category="{{ item[1] }}">
 {{ item[1] }} - {{ item[0] }}
 </option>
 
 {% endfor %}
 
 </select>
-<div class="mt-3">
+<div class="mt-3" id="quantityBox">
 
 <label class="form-label fw-bold">
 입찰 수량
@@ -357,7 +360,36 @@ async function cancelEntry(id) {
 
     loadEntries();
 }
+const itemSelect =
+    document.getElementById("itemSelect");
 
+const quantityBox =
+    document.getElementById("quantityBox");
+
+function toggleQuantityBox() {
+
+    const selected =
+        itemSelect.options[itemSelect.selectedIndex];
+
+    const category =
+        selected.dataset.category;
+
+    if (category === "기타") {
+
+        quantityBox.style.display = "block";
+
+    } else {
+
+        quantityBox.style.display = "none";
+    }
+}
+
+itemSelect.addEventListener(
+    "change",
+    toggleQuantityBox
+);
+
+toggleQuantityBox();
 </script>
 
 
