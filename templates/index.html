@@ -368,6 +368,11 @@ const quantityBox =
 
 function toggleQuantityBox() {
 
+    if (itemSelect.selectedIndex < 0) {
+        quantityBox.style.display = "none";
+        return;
+    }
+
     const selected =
         itemSelect.options[itemSelect.selectedIndex];
 
