@@ -7,7 +7,13 @@ import sqlite3
 import random
 
 app = FastAPI()
+from fastapi.staticfiles import StaticFiles
 
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static"
+)
 templates = Jinja2Templates(directory="templates")
 
 ADMIN_PASSWORD = "1234"
