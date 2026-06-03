@@ -287,9 +287,15 @@ async def home(request: Request):
     cur = conn.cursor()
 
     cur.execute("""
-    SELECT item_name, category
-    FROM items
-    ORDER BY category
+    SELECT
+        i.item_name,
+        i.category,
+        COUNT(e.id)
+    FROM items i
+    LEFT JOIN entries e
+        ON i.item_name = e.item_name
+    GROUP BY i.item_name, i.category
+    ORDER BY i.category
     """)
 
     items = cur.fetchall()

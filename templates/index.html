@@ -70,13 +70,16 @@ id="itemSelect">
 <option
 value="{{ item[0] }}"
 data-category="{{ item[1] }}">
-{{ item[1] }} - {{ item[0] }}
+{{ item[1] }} - {{ item[0] }} ({{ item[2] }}명)
 </option>
 
 {% endfor %}
 
 </select>
-<div class="mt-3" id="quantityBox">
+<div
+class="mt-3"
+id="quantityBox"
+style="display:none;">
 
 <label class="form-label fw-bold">
 입찰 수량
