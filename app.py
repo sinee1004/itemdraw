@@ -37,7 +37,8 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nickname TEXT,
         item_name TEXT,
-        entry_number TEXT
+        entry_number TEXT,
+        quantity INTEGER DEFAULT 1
     )
     """)
 
@@ -50,8 +51,14 @@ def init_db():
     )
     """)
 
-    cur.execute("SELECT COUNT(*) FROM items")
-
+    # 기존 DB 사용 중일 경우 quantity 컬럼 추가
+    try:
+        cur.execute("""
+        ALTER TABLE entries
+        ADD COLUMN quantity INTEGER DEFAULT 1
+        """)
+    except:
+        pass
 
     conn.commit()
     conn.close()
@@ -76,7 +83,36 @@ def get_category(item_name):
 
     return row[0] if row else ""
 
+def round_robin_distribution(applicants, total_qty):
 
+    result = {}
+
+    for nickname, qty in applicants:
+        result[nickname] = 0
+
+    remaining = {
+        nickname: qty
+        for nickname, qty in applicants
+    }
+
+    while total_qty > 0:
+
+        distributed = False
+
+        for nickname in remaining:
+
+            if remaining[nickname] > 0 and total_qty > 0:
+
+                result[nickname] += 1
+                remaining[nickname] -= 1
+                total_qty -= 1
+
+                distributed = True
+
+        if not distributed:
+            break
+
+    return result
 
 def run_draw():
 
@@ -86,53 +122,106 @@ def run_draw():
     cur.execute("DELETE FROM winners")
 
     cur.execute("""
-    SELECT item_name, winner_count
+    SELECT item_name, category, winner_count
     FROM items
     """)
 
     items = cur.fetchall()
 
-    for item_name, winner_count in items:
+    for item_name, category, winner_count in items:
 
-        cur.execute(
-            """
-            SELECT nickname,item_name,entry_number
-            FROM entries
-            WHERE item_name=?
-            """,
-            (item_name,)
-        )
-
-        applicants = cur.fetchall()
-
-        if not applicants:
+        # 기타 품목
+        if category == "기타":
 
             cur.execute(
                 """
-                INSERT INTO winners
-                (nickname,item_name,entry_number)
-                VALUES (?,?,?)
+                SELECT nickname, quantity
+                FROM entries
+                WHERE item_name=?
                 """,
-                ("유찰", item_name, "-")
+                (item_name,)
             )
 
-            continue
+            applicants = cur.fetchall()
 
-        selected = random.sample(
-            applicants,
-            min(winner_count, len(applicants))
-        )
+            if not applicants:
 
-        for winner in selected:
+                cur.execute(
+                    """
+                    INSERT INTO winners
+                    (nickname,item_name,entry_number)
+                    VALUES (?,?,?)
+                    """,
+                    ("유찰", item_name, "-")
+                )
+
+                continue
+
+            distributed = round_robin_distribution(
+                applicants,
+                winner_count
+            )
+
+            for nickname, qty in distributed.items():
+
+                if qty <= 0:
+                    continue
+
+                cur.execute(
+                    """
+                    INSERT INTO winners
+                    (nickname,item_name,entry_number)
+                    VALUES (?,?,?)
+                    """,
+                    (
+                        nickname,
+                        item_name,
+                        f"{qty}개 지급"
+                    )
+                )
+
+        # 장비 / 악세 / 엠블럼
+        else:
 
             cur.execute(
                 """
-                INSERT INTO winners
-                (nickname,item_name,entry_number)
-                VALUES (?,?,?)
+                SELECT nickname,item_name,entry_number
+                FROM entries
+                WHERE item_name=?
                 """,
-                winner
+                (item_name,)
             )
+
+            applicants = cur.fetchall()
+
+            if not applicants:
+
+                cur.execute(
+                    """
+                    INSERT INTO winners
+                    (nickname,item_name,entry_number)
+                    VALUES (?,?,?)
+                    """,
+                    ("유찰", item_name, "-")
+                )
+
+                continue
+
+            selected = random.sample(
+                applicants,
+                min(winner_count, len(applicants))
+            )
+
+            for winner in selected:
+
+                cur.execute(
+                    """
+                    INSERT INTO winners
+                    (nickname,item_name,entry_number)
+                    VALUES (?,?,?)
+                    """,
+                    winner
+                )
 
     conn.commit()
     conn.close()
@@ -227,10 +316,9 @@ async def home(request: Request):
 @app.post("/apply")
 async def apply(
     nickname: str = Form(...),
-    item_name: str = Form(...)
+    item_name: str = Form(...),
+    quantity: int = Form(1)
 ):
-
-    
 
     conn = get_db()
     cur = conn.cursor()
@@ -288,23 +376,45 @@ async def apply(
             etc += 1
 
     if category == "장비" and equip >= 1:
-        return {"success": False, "message": "장비는 1개만 신청 가능합니다."}
+        conn.close()
+        return {
+            "success": False,
+            "message": "장비는 1개만 신청 가능합니다."
+        }
 
     if category == "악세사리" and accessory >= 1:
-        return {"success": False, "message": "악세사리는 1개만 신청 가능합니다."}
+        conn.close()
+        return {
+            "success": False,
+            "message": "악세사리는 1개만 신청 가능합니다."
+        }
 
     if category == "엠블럼" and emblem >= 2:
-        return {"success": False, "message": "엠블럼은 2개만 신청 가능합니다."}
+        conn.close()
+        return {
+            "success": False,
+            "message": "엠블럼은 2개만 신청 가능합니다."
+        }
 
     if category == "기타" and etc >= 3:
-        return {"success": False, "message": "기타 품목은 3개만 신청 가능합니다."}
+        conn.close()
+        return {
+            "success": False,
+            "message": "기타 품목은 3개만 신청 가능합니다."
+        }
+
     cur.execute(
         """
         INSERT INTO entries
-        (nickname,item_name,entry_number)
-        VALUES (?,?,?)
+        (nickname,item_name,entry_number,quantity)
+        VALUES (?,?,?,?)
         """,
-        (nickname, item_name, "")
+        (
+            nickname,
+            item_name,
+            "",
+            quantity
+        )
     )
 
     entry_id = cur.lastrowid
