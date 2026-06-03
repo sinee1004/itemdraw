@@ -4,9 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-<link
-rel="stylesheet"
-href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css">
+
 <meta
 name="viewport"
 content="width=device-width, initial-scale=1.0">
@@ -20,8 +18,9 @@ rel="stylesheet">
 <style>
 
 body{
-    font-family:'SUIT', sans-serif;
-    background:#081b38;
+    background:url('/static/background.jpg')
+              no-repeat center center fixed;
+    background-size:cover;
     min-height:100vh;
 }
 
@@ -54,8 +53,7 @@ body{
 }
 
 .card-header{
-    font-weight:900;
-    letter-spacing:-0.5px;
+    font-weight:800;
 }
 
 .btn{
@@ -73,31 +71,26 @@ body{
 /* ===== 킹덤아케인 RPG 스타일 ===== */
 
 .bg-success{
-
-    background:
-        linear-gradient(
-            180deg,
-            #2ea34f,
-            #0d6427
-        ) !important;
-
-    border-bottom:
-        2px solid #d4af37;
+    background:linear-gradient(
+        180deg,
+        #45d64d,
+        #18852d
+    ) !important;
 }
 
 .bg-info{
     background:linear-gradient(
         180deg,
-        #1f5fb8,
-        #0a2f73
+        #4fc3ff,
+        #166bd8
     ) !important;
 }
 
 .bg-warning{
     background:linear-gradient(
         180deg,
-        #f4c84f,
-        #b97c00
+        #ffd75a,
+        #d89b00
     ) !important;
 }
 
@@ -135,41 +128,11 @@ body{
 
 /* 버튼 */
 .btn-success{
-
-    background:
-        linear-gradient(
-            180deg,
-            #34d84d,
-            #0c7d24
-        ) !important;
-
-    border:2px solid #d4af37 !important;
-
+    font-weight:800;
+    border:none;
     border-radius:14px;
-
-    font-size:24px;
-
-    font-weight:900;
-
-    color:white;
-
-    letter-spacing:1px;
-
-    text-shadow:
-        0 1px 3px rgba(0,0,0,.5);
-
-    box-shadow:
-        0 4px 12px rgba(0,0,0,.25);
 }
-.btn-success:hover{
 
-    transform:
-        translateY(-3px)
-        scale(1.02);
-
-    box-shadow:
-        0 8px 20px rgba(0,0,0,.35);
-}
 .btn-primary{
     border:none;
     border-radius:14px;
@@ -199,7 +162,7 @@ body::before{
     position:fixed;
     inset:0;
 
-    background:rgba(0,0,0,0.08);
+    background:rgba(0,0,0,0.20);
 
     z-index:-1;
 }
@@ -220,298 +183,6 @@ body::before{
             0 0 40px rgba(255,215,0,.8);
     }
 }
-.hero-wrapper{
-
-    padding-top:15px;
-    padding-bottom:30px;
-}
-
-.hero-logo{
-
-    font-size:70px;
-
-    margin-bottom:15px;
-}
-
-.hero-title{
-
-    font-size:60px;
-
-    font-weight:900;
-
-    color:#f6d16a;
-
-    letter-spacing:4px;
-
-    text-shadow:
-        0 0 20px rgba(255,215,0,.8),
-        0 4px 10px rgba(0,0,0,.8);
-}
-
-.hero-subtitle{
-
-    display:inline-block;
-
-    padding:12px 30px;
-
-    background:#0c3f85;
-
-    border:2px solid gold;
-
-    border-radius:10px;
-
-    color:#ffd34d;
-
-    font-size:28px;
-
-    font-weight:700;
-}
-
-.hero-description{
-
-    margin-top:20px;
-
-    font-size:22px;
-
-    color:white;
-
-    text-shadow:0 2px 5px black;
-}
-
-.hero-badges{
-
-    margin-top:25px;
-}
-
-.hero-badges .badge{
-
-    margin:5px;
-
-    padding:12px 20px;
-
-    font-size:18px;
-
-    border-radius:10px;
-}
-
-.badge-gold{
-    background:#d9a100;
-}
-
-.badge-green{
-    background:#1f8f3d;
-}
-
-.badge-blue{
-    background:#166bd8;
-}
-.guide-panel{
-
-    background:
-        linear-gradient(
-            180deg,
-            #fff8df,
-            #f6edd0
-        );
-
-    border:2px solid #d4af37;
-
-    border-radius:20px;
-
-    padding:18px;
-
-    box-shadow:
-        inset 0 0 15px rgba(255,215,0,.15);
-}
-
-.guide-panel h4{
-
-    text-align:center;
-
-    font-weight:900;
-
-    color:#0d5f2d;
-
-    font-size:22px;
-
-    letter-spacing:-0.5px;
-
-    margin-bottom:10px;
-}
-
-.guide-item{
-
-    background:white;
-
-    border:1px solid #e8d28a;
-
-    border-radius:10px;
-
-    padding:10px 12px;
-
-    font-weight:700;
-
-    transition:.2s;
-}
-
-.guide-item:hover{
-
-    transform:translateY(-2px);
-
-    box-shadow:
-        0 3px 10px rgba(0,0,0,.12);
-}
-.guide-note{
-
-    text-align:center;
-
-    font-size:14px;
-
-    color:#555;
-}
-.fantasy-card{
-
-    border:3px solid #d4af37;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255,255,250,.97),
-            rgba(248,242,220,.96)
-        );
-
-    box-shadow:
-        0 6px 20px rgba(0,0,0,.12),
-        0 0 15px rgba(212,175,55,.20);
-}
-
-
-.hero-banner{
-
-    height:380px;
-
-    background:
-        url('/static/background.jpg')
-        no-repeat center top;
-
-    background-size:cover;
-
-    position:relative;
-
-    overflow:hidden;
-}
-
-.main-wrapper{
-
-    margin-top:-70px;
-
-    position:relative;
-
-    z-index:10;
-}
-.guide-grid{
-
-    display:grid;
-
-    grid-template-columns:1fr 1fr;
-
-    gap:8px;
-}
-.search-panel{
-
-    background:
-        linear-gradient(
-            180deg,
-            #123f82,
-            #07214b
-        ) !important;
-
-    border:2px solid #d4af37;
-
-    border-radius:12px;
-}
-
-.search-panel .card-body{
-    padding:12px 15px;
-}
-
-.search-title{
-
-    color:#ffffff;
-
-    font-size:20px;
-
-    font-weight:900;
-
-    margin-bottom:10px;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-    text-shadow:
-        0 2px 4px rgba(0,0,0,.5);
-}
-.search-panel .form-control{
-
-    border-radius:8px;
-
-    border:2px solid #c8c8c8;
-
-    height:48px;
-
-    font-size:18px;
-}
-.search-panel .btn-primary{
-
-    background:
-        linear-gradient(
-            180deg,
-            #1e73ff,
-            #0b3d99
-        );
-
-    border:2px solid #d4af37;
-
-    border-radius:8px;
-
-    font-weight:800;
-
-    min-width:90px;
-}
-.bg-warning{
-
-    background:
-        linear-gradient(
-            180deg,
-            #f0c442,
-            #c38700
-        ) !important;
-
-    color:#3d2800 !important;
-
-    border-bottom:
-        2px solid #d4af37;
-}
-.result-box{
-
-    padding:20px;
-
-    text-align:center;
-
-    border:1px solid #edd184;
-
-    border-radius:10px;
-
-    background:
-        rgba(255,248,220,.9);
-
-    color:#7a5b00;
-
-    font-weight:700;
-}
 </style>
 
 
@@ -519,15 +190,42 @@ body::before{
 
 <body>
 
-<div class="hero-banner"></div>
+<div class="container mt-5">
 
-<div class="container main-wrapper">
+<div class="text-center mb-4">
 
-<div class="row">
+<h1 class="guild-title">
+👑 킹덤아케인 👑
+</h1>
 
-<div class="col-12">
+<div class="guild-subtitle">
+우와모험단 길드 이벤트 사이트
+</div>
 
-<div class="card shadow-lg fantasy-card">
+<div class="mt-3">
+
+<span class="badge bg-warning text-dark p-2 fs-6">
+⚖️ 공정한 추첨
+</span>
+
+<span class="badge bg-success p-2 fs-6">
+🎁 길드 이벤트
+</span>
+
+<span class="badge bg-primary p-2 fs-6">
+👥 전원 참여
+</span>
+
+</div>
+</div>
+
+</div>
+
+<div class="row justify-content-center">
+
+<div class="col-lg-8">
+
+<div class="card shadow-lg">
 
 <div class="card-header bg-success text-white text-center">
 
@@ -538,8 +236,6 @@ body::before{
 </div>
 
 <div class="card-body">
-
-
 
 <form id="applyForm">
 
@@ -617,47 +313,27 @@ type="submit">
 </form>
 
 <div id="result" class="mt-4"></div>
-</div>
-
-
-
-<div class="guide-panel">
-
-<h4>
-📦 신청 가능 품목
-</h4>
-
-<div class="guide-grid">
-
-    <div class="guide-item">
-    🛡️ 장비 1개
-    </div>
-
-    <div class="guide-item">
-    💍 악세사리 1개
-    </div>
-
-    <div class="guide-item">
-    🏅 엠블럼 2개
-    </div>
-
-    <div class="guide-item">
-    📦 기타 품목 3개
-    </div>
 
 </div>
 
 </div>
 
+<div class="text-center mt-3 text-muted">
 
+<small>
+장비 1개 / 악세사리 1개 / 엠블럼 2개 신청 가능 / 기타 품목은 3개 입찰가능
+</small>
 
-<div class="card shadow mt-4 fantasy-card search-panel">
+</div>
+<hr>
 
-<div class="card-body">
+<div class="card shadow mt-4">
 
-<div class="search-title">
+<div class="card-header bg-info text-white">
 📜 내 신청 조회 / 취소
 </div>
+
+<div class="card-body">
 
 <div class="input-group mb-3">
 
@@ -682,7 +358,7 @@ onclick="loadEntries()">
 </div>
 
 </div>
-<div class="card shadow-lg mt-2 fantasy-card">
+<div class="card shadow-lg mt-5">
 
 <div class="card-header bg-warning text-dark text-center">
 
@@ -748,10 +424,11 @@ onclick="loadEntries()">
 
 {% else %}
 
-<div class="result-box">
-아직 추첨 결과가 없습니다.
-</div>
+<div class="alert alert-warning text-center">
 
+아직 추첨 결과가 없습니다.
+
+</div>
 
 {% endif %}
 
@@ -919,6 +596,6 @@ toggleQuantityBox();
 </script>
 
 
-
 </body>
+
 </html>
