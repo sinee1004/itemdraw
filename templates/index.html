@@ -66,15 +66,25 @@ body{
     font-weight:700;
 }
 
-.card-header h3{
+.card-header{
 
-    font-weight:900;
+    position:relative;
 
-    letter-spacing:-1px;
+    background:none !important;
 
-    text-shadow:
-        0 1px 0 rgba(255,255,255,.8),
-        0 2px 3px rgba(0,0,0,.25);
+    border:none;
+
+    min-height:90px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:0;
+
+    z-index:5;
 }
 
 .btn{
@@ -412,19 +422,17 @@ body::before{
 }
 .fantasy-card{
 
-    border:3px solid #c89f3a;
+    position:relative;
 
-    background:
-    linear-gradient(
-        180deg,
-        #fffefb,
-        #efe6d3
-    );
+    background:#f5f0e4;
 
-    box-shadow:
-        inset 0 0 0 1px #fff7d9,
-        inset 0 0 0 3px rgba(255,255,255,.35),
-        0 8px 18px rgba(0,0,0,.15);
+    border:none;
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    padding:0;
 
 }
 
@@ -607,6 +615,52 @@ body::before{
     vertical-align:middle;
 
     margin-right:6px;
+}
+
+.card-header::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        url('/static/ui/frame-header.png')
+        no-repeat center center;
+
+    background-size:cover;
+
+    z-index:0;
+}
+}
+.card-body,
+.card-header{
+
+    position:relative;
+
+    z-index:5;
+}
+.card-header h3{
+
+    position:relative;
+
+    z-index:10;
+
+    margin:0;
+
+    color:#fff8dc;
+
+    font-size:32px;
+
+    font-weight:900;
+
+    letter-spacing:1px;
+
+    text-shadow:
+        0 1px 0 #fff,
+        0 2px 0 #d4af37,
+        0 4px 8px rgba(0,0,0,.7);
 }
 </style>
 
