@@ -663,28 +663,20 @@ body::before{
 
     z-index:10;
 
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:10px;
-
     margin:0;
 
-    color:#fff6d5;
+    color:#fff8dc;
 
-    font-size:28px;
+    font-size:30px;
 
     font-weight:900;
 
     letter-spacing:2px;
 
     text-shadow:
-        0 1px 0 #ffffff,
-        0 2px 0 #d4af37,
-        0 4px 6px rgba(0,0,0,.45);
+        0 2px 0 #4a3500,
+        0 4px 0 #7a5a00,
+        0 6px 10px rgba(0,0,0,.75);
 }
 
 .mini-frame-header img,
@@ -698,6 +690,24 @@ body::before{
 
 .guide-panel h4{
     margin-bottom:18px;
+}
+.card-header::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        url('/static/ui/frame-header.png')
+        no-repeat center center;
+
+    background-size:100% 100%;
+
+    filter:brightness(.75);
+
+    z-index:0;
 }
 </style>
 
