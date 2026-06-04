@@ -662,48 +662,6 @@ body::before{
         0 2px 0 #d4af37,
         0 4px 8px rgba(0,0,0,.7);
 }
-.mini-frame-header{
-
-    position:relative;
-
-    height:55px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:10px;
-
-    font-size:24px;
-
-    font-weight:900;
-
-    color:#fff8dc;
-
-    text-shadow:
-        0 1px 0 #fff,
-        0 2px 0 #d4af37,
-        0 4px 8px rgba(0,0,0,.7);
-}
-
-.mini-frame-header::before{
-
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    background:
-        url('/static/ui/frame-header.png')
-        no-repeat center center;
-
-    background-size:100% 100%;
-
-    z-index:0;
-}
 
 .mini-frame-header img,
 .mini-frame-header{
@@ -712,32 +670,7 @@ body::before{
 
     z-index:5;
 }
-.panel-frame{
 
-    position:relative;
-
-    padding:30px;
-
-    overflow:hidden;
-}
-.panel-frame::before{
-
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    background:
-        url('/static/ui/frame-panel.png')
-        no-repeat center center;
-
-    background-size:100% 100%;
-
-    pointer-events:none;
-
-    z-index:1;
-}
 .panel-frame > *{
 
     position:relative;
@@ -859,7 +792,25 @@ type="submit">
 
 
 
-<div class="guide-panel"></div>
+<div class="guide-panel">
+
+    <h4>
+        <img
+        src="/static/icons/chest.png"
+        class="section-icon">
+
+        신청 가능 품목
+    </h4>
+
+    <div class="guide-grid">
+
+        ...
+        품목들
+        ...
+
+    </div>
+
+</div>
 
 <div class="mini-frame-header">
 
@@ -911,13 +862,13 @@ type="submit">
 
 <div class="card-body">
 
-<div class="mini-frame-header">
+<div class="search-title">
 
     <img
     src="/static/icons/scroll.png"
     class="section-icon">
 
-    <span>내 신청 조회 / 취소</span>
+    내 신청 조회 / 취소
 
 </div>
 
