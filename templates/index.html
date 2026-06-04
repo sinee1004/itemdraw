@@ -666,7 +666,7 @@ body::before{
 
     position:relative;
 
-    height:70px;
+    height:55px;
 
     display:flex;
 
@@ -674,7 +674,9 @@ body::before{
 
     justify-content:center;
 
-    font-size:22px;
+    gap:10px;
+
+    font-size:24px;
 
     font-weight:900;
 
@@ -684,8 +686,6 @@ body::before{
         0 1px 0 #fff,
         0 2px 0 #d4af37,
         0 4px 8px rgba(0,0,0,.7);
-
-    margin-bottom:15px;
 }
 
 .mini-frame-header::before{
@@ -863,10 +863,11 @@ type="submit">
 
 <div class="mini-frame-header">
 
-    <img src="/static/icons/chest.png"
+    <img
+    src="/static/icons/chest.png"
     class="section-icon">
 
-    신청 가능 품목
+    <span>신청 가능 품목</span>
 
 </div>
 
@@ -912,10 +913,11 @@ type="submit">
 
 <div class="mini-frame-header">
 
-    <img src="/static/icons/scroll.png"
+    <img
+    src="/static/icons/scroll.png"
     class="section-icon">
 
-    내 신청 조회 / 취소
+    <span>내 신청 조회 / 취소</span>
 
 </div>
 
