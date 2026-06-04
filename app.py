@@ -323,9 +323,16 @@ async def home(request: Request):
     rows = cur.fetchall()
 
     winners = []
+
+    current_item = None
     seq = 1
 
     for nickname, item_name, result, category in rows:
+
+        # 품목이 바뀌면 순번 초기화
+        if current_item != item_name:
+            current_item = item_name
+            seq = 1
 
         if nickname == "유찰":
 
@@ -335,7 +342,7 @@ async def home(request: Request):
 
             continue
 
-        # 기타 품목만 지급 순번 표시
+        # 기타 품목만 순번 표시
         if category == "기타" and "개 지급" in result:
 
             qty = int(result.replace("개 지급", "").strip())
@@ -349,7 +356,7 @@ async def home(request: Request):
             display_result = ", ".join(numbers)
 
         else:
-            # 장비 / 악세 / 엠블럼
+
             display_result = "당첨"
 
         winners.append(
@@ -631,22 +638,35 @@ async def results(request: Request):
     rows = cur.fetchall()
 
     winners = []
+
+    current_item = None
     seq = 1
 
     for nickname, item_name, result, category in rows:
 
+        # 품목이 바뀌면 순번 초기화
+        if current_item != item_name:
+            current_item = item_name
+            seq = 1
+
         if nickname == "유찰":
 
             winners.append(
-                ("유찰", item_name, "-")
+                (
+                    "유찰",
+                    item_name,
+                    "-"
+                )
             )
 
             continue
 
-        # 기타 품목만 지급 순번 표시
+        # 기타 품목만 순번 표시
         if category == "기타" and "개 지급" in result:
 
-            qty = int(result.replace("개 지급", "").strip())
+            qty = int(
+                result.replace("개 지급", "").strip()
+            )
 
             numbers = []
 
