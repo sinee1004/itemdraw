@@ -20,16 +20,21 @@ rel="stylesheet">
 <style>
 
 body{
-    font-family:'SUIT', sans-serif;
 
     background:
     linear-gradient(
         180deg,
-        #f8f5ee 0%,
-        #ece7db 100%
+        #f7f3ea,
+        #e2dac8
     );
 
-    min-height:100vh;
+    background-image:
+        radial-gradient(
+            rgba(255,255,255,.25) 1px,
+            transparent 1px
+        );
+
+    background-size:14px 14px;
 }
 
 .card{
@@ -84,15 +89,19 @@ body{
     background:
     linear-gradient(
         180deg,
-        #f6f6f6 0%,
-        #d6d6d6 50%,
-        #bcbcbc 100%
+        #ffffff 0%,
+        #f8f8f8 12%,
+        #d5d5d5 25%,
+        #8e8e8e 50%,
+        #d7d7d7 75%,
+        #ffffff 100%
     ) !important;
 
-    color:#222 !important;
+    border-bottom:2px solid #d4af37;
 
-    border-bottom:
-        2px solid #c8a94f;
+    box-shadow:
+        inset 0 2px 0 rgba(255,255,255,.9),
+        inset 0 -2px 0 rgba(0,0,0,.15);
 }
 
 .bg-info{
@@ -192,7 +201,20 @@ body{
 /* 입력창 */
 .form-control,
 .form-select{
-    border-radius:12px;
+
+    background:
+    linear-gradient(
+        180deg,
+        #ffffff,
+        #ece8de
+    );
+
+    border:2px solid #bfa46a;
+
+    box-shadow:
+        inset 0 2px 4px rgba(0,0,0,.08);
+
+    font-weight:700;
 }
 
 /* 테이블 */
@@ -351,35 +373,19 @@ body::before{
 
 .guide-item{
 
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    text-align:center;
-
-    min-height:48px;
-
     background:
-        linear-gradient(
-            180deg,
-            #ffffff,
-            #f4f4f4
-        );
+    linear-gradient(
+        180deg,
+        #ffffff,
+        #ececec
+    );
 
-    border:2px solid #d4af37;
-
-    border-radius:10px;
-
-    font-size:14px;
-
-    font-weight:700;
-
-    color:#2b2b2b;
+    border:2px solid #c8a24a;
 
     box-shadow:
-        0 2px 6px rgba(0,0,0,.06);
+        inset 0 1px 0 rgba(255,255,255,.8),
+        0 2px 8px rgba(0,0,0,.08);
+
 }
 
 .guide-item:hover{
@@ -399,23 +405,21 @@ body::before{
 }
 .fantasy-card{
 
-    border:2px solid #b79a57;
-
-    border-radius:24px;
+    border:3px solid #c89f3a;
 
     background:
     linear-gradient(
         180deg,
-        #faf8f3 0%,
-        #ebe5d8 100%
+        #fffefb,
+        #efe6d3
     );
 
     box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.8),
-        0 4px 15px rgba(0,0,0,.12);
+        inset 0 0 0 1px #fff7d9,
+        inset 0 0 0 3px rgba(255,255,255,.35),
+        0 8px 18px rgba(0,0,0,.15);
 
 }
-
 
 .hero-banner{
 
