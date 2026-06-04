@@ -573,10 +573,48 @@ async def results(request: Request):
     cur.execute("""
     SELECT nickname,item_name,entry_number
     FROM winners
-    ORDER BY item_name
+    ORDER BY item_name ASC, nickname ASC
     """)
 
-    winners = cur.fetchall()
+    rows = cur.fetchall()
+
+    winners = []
+    seq = 1
+
+    for nickname, item_name, result in rows:
+
+        if nickname == "유찰":
+
+            winners.append(
+                ("유찰", item_name, "-")
+            )
+
+            continue
+
+        if "개 지급" in result:
+
+            qty = int(result.replace("개 지급", "").strip())
+
+            numbers = []
+
+            for _ in range(qty):
+                numbers.append(f"{seq}번")
+                seq += 1
+
+            display_result = ", ".join(numbers)
+
+        else:
+
+            display_result = f"{seq}번"
+            seq += 1
+
+        winners.append(
+            (
+                nickname,
+                item_name,
+                display_result
+            )
+        )
 
     conn.close()
 
