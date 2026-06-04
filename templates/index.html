@@ -712,6 +712,38 @@ body::before{
 
     z-index:5;
 }
+.panel-frame{
+
+    position:relative;
+
+    padding:30px;
+
+    overflow:hidden;
+}
+.panel-frame::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        url('/static/ui/frame-panel.png')
+        no-repeat center center;
+
+    background-size:100% 100%;
+
+    pointer-events:none;
+
+    z-index:1;
+}
+.panel-frame > *{
+
+    position:relative;
+
+    z-index:5;
+}
 </style>
 
 
@@ -827,7 +859,7 @@ type="submit">
 
 
 
-<div class="guide-panel">
+<div class="guide-panel panel-frame">
 
 <div class="mini-frame-header">
 
@@ -874,7 +906,7 @@ type="submit">
 
 
 
-<div class="card shadow mt-4 fantasy-card search-panel">
+<div class="card shadow mt-4 fantasy-card search-panel panel-frame">
 
 <div class="card-body">
 
