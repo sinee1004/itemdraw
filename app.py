@@ -309,9 +309,15 @@ async def home(request: Request):
 
     # 당첨 결과
     cur.execute("""
-    SELECT nickname,item_name,entry_number
-    FROM winners
-    ORDER BY item_name ASC, nickname ASC
+    SELECT
+        w.nickname,
+        w.item_name,
+        w.entry_number,
+        i.category
+    FROM winners w
+    LEFT JOIN items i
+        ON w.item_name = i.item_name
+    ORDER BY w.item_name ASC, w.nickname ASC
     """)
 
     rows = cur.fetchall()
@@ -319,7 +325,7 @@ async def home(request: Request):
     winners = []
     seq = 1
 
-    for nickname, item_name, result in rows:
+    for nickname, item_name, result, category in rows:
 
         if nickname == "유찰":
 
@@ -329,7 +335,8 @@ async def home(request: Request):
 
             continue
 
-        if "개 지급" in result:
+        # 기타 품목만 지급 순번 표시
+        if category == "기타" and "개 지급" in result:
 
             qty = int(result.replace("개 지급", "").strip())
 
@@ -342,9 +349,8 @@ async def home(request: Request):
             display_result = ", ".join(numbers)
 
         else:
-
-            display_result = f"{seq}번"
-            seq += 1
+            # 장비 / 악세 / 엠블럼
+            display_result = "당첨"
 
         winners.append(
             (
@@ -611,9 +617,15 @@ async def results(request: Request):
     cur = conn.cursor()
 
     cur.execute("""
-    SELECT nickname,item_name,entry_number
-    FROM winners
-    ORDER BY item_name ASC, nickname ASC
+    SELECT
+        w.nickname,
+        w.item_name,
+        w.entry_number,
+        i.category
+    FROM winners w
+    LEFT JOIN items i
+        ON w.item_name = i.item_name
+    ORDER BY w.item_name ASC, w.nickname ASC
     """)
 
     rows = cur.fetchall()
@@ -621,7 +633,7 @@ async def results(request: Request):
     winners = []
     seq = 1
 
-    for nickname, item_name, result in rows:
+    for nickname, item_name, result, category in rows:
 
         if nickname == "유찰":
 
@@ -631,7 +643,8 @@ async def results(request: Request):
 
             continue
 
-        if "개 지급" in result:
+        # 기타 품목만 지급 순번 표시
+        if category == "기타" and "개 지급" in result:
 
             qty = int(result.replace("개 지급", "").strip())
 
@@ -644,9 +657,8 @@ async def results(request: Request):
             display_result = ", ".join(numbers)
 
         else:
-
-            display_result = f"{seq}번"
-            seq += 1
+            # 장비 / 악세 / 엠블럼
+            display_result = "당첨"
 
         winners.append(
             (
