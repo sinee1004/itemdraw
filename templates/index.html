@@ -4,9 +4,8 @@
 <head>
 
 <meta charset="UTF-8">
-<link
-rel="stylesheet"
-href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css">
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSans.css">
 <meta
 name="viewport"
 content="width=device-width, initial-scale=1.0">
@@ -20,6 +19,8 @@ rel="stylesheet">
 <style>
 
 body{
+
+    font-family:'GmarketSansMedium', sans-serif;
 
     background:
     linear-gradient(
@@ -65,9 +66,15 @@ body{
     font-weight:700;
 }
 
-.card-header{
+.card-header h3{
+
     font-weight:900;
-    letter-spacing:-0.5px;
+
+    letter-spacing:-1px;
+
+    text-shadow:
+        0 1px 0 rgba(255,255,255,.8),
+        0 2px 3px rgba(0,0,0,.25);
 }
 
 .btn{
@@ -570,13 +577,19 @@ body::before{
 
     align-items:center;
 
-    gap:8px;
+    gap:6px;
+
+    min-height:40px;
+
+    font-size:15px;
+
+    font-weight:800;
 
 }
 .title-icon{
 
-    width:40px;
-    height:40px;
+    width:28px;
+    height:28px;
 
     object-fit:contain;
 
@@ -713,7 +726,10 @@ type="submit">
 <div class="guide-panel">
 
 <h4>
-📦 신청 가능 품목
+<img src="/static/icons/chest.png"
+class="section-icon">
+
+신청 가능 품목
 </h4>
 
 <div class="guide-grid">
@@ -722,7 +738,7 @@ type="submit">
         <img
         src="/static/icons/shield.png"
         class="item-icon">
-        장    비 1개
+        장비 1개
     </div>
 
     <div class="guide-item">
@@ -736,14 +752,14 @@ type="submit">
         <img
         src="/static/icons/medal.png"
         class="item-icon">
-        엠 블 럼 2개
+        엠블럼 2개
     </div>
 
     <div class="guide-item">
         <img
         src="/static/icons/chest.png"
         class="item-icon">
-        기타품목 3개
+        기타 품목 3개
     </div>
 
 </div>
