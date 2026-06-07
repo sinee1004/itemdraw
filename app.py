@@ -322,50 +322,65 @@ async def home(request: Request):
 
     rows = cur.fetchall()
 
-    winners = []
+    equipment = []
+    accessory = []
+    emblem = []
+    etc_items = []
 
     current_item = None
     seq = 1
 
     for nickname, item_name, result, category in rows:
 
-        # 품목이 바뀌면 순번 초기화
         if current_item != item_name:
             current_item = item_name
             seq = 1
 
         if nickname == "유찰":
 
-            winners.append(
-                ("유찰", item_name, "-")
+            row_data = (
+                "유찰",
+                item_name,
+                "-"
             )
-
-            continue
-
-        # 기타 품목만 순번 표시
-        if category == "기타" and "개 지급" in result:
-
-            qty = int(result.replace("개 지급", "").strip())
-
-            numbers = []
-
-            for _ in range(qty):
-                numbers.append(f"{seq}번")
-                seq += 1
-
-            display_result = ", ".join(numbers)
 
         else:
 
-            display_result = "당첨"
+            if category == "기타" and "개 지급" in result:
 
-        winners.append(
-            (
+                qty = int(
+                    result.replace("개 지급", "").strip()
+                )
+
+                numbers = []
+
+                for _ in range(qty):
+                    numbers.append(f"{seq}번")
+                    seq += 1
+
+                display_result = ", ".join(numbers)
+
+            else:
+
+                display_result = "당첨"
+
+            row_data = (
                 nickname,
                 item_name,
                 display_result
             )
-        )
+
+        if category == "장비":
+            equipment.append(row_data)
+
+        elif category == "악세사리":
+            accessory.append(row_data)
+
+        elif category == "엠블럼":
+            emblem.append(row_data)
+
+        elif category == "기타":
+            etc_items.append(row_data)
 
     conn.close()
 
@@ -374,10 +389,12 @@ async def home(request: Request):
         name="index.html",
         context={
             "items": items,
-            "winners": winners
+            "equipment": equipment,
+            "accessory": accessory,
+            "emblem": emblem,
+            "etc_items": etc_items
         }
     )
-
 @app.post("/apply")
 async def apply(
     nickname: str = Form(...),

@@ -919,41 +919,70 @@ onclick="loadEntries()">
 
 <div class="card-body">
 
-{% if winners %}
+<ul class="nav nav-tabs mb-3">
+
+<li class="nav-item">
+<button class="nav-link active"
+data-bs-toggle="tab"
+data-bs-target="#equip">
+장비 ({{ equipment|length }})
+</button>
+</li>
+
+<li class="nav-item">
+<button class="nav-link"
+data-bs-toggle="tab"
+data-bs-target="#accessory">
+악세사리 ({{ accessory|length }})
+</button>
+</li>
+
+<li class="nav-item">
+<button class="nav-link"
+data-bs-toggle="tab"
+data-bs-target="#emblem">
+엠블럼 ({{ emblem|length }})
+</button>
+</li>
+
+<li class="nav-item">
+<button class="nav-link"
+data-bs-toggle="tab"
+data-bs-target="#etc">
+기타 ({{ etc_items|length }})
+</button>
+</li>
+
+</ul>
+
+<div class="tab-content">
+
+<!-- 장비 -->
+<div class="tab-pane fade show active" id="equip">
+
+{% if equipment %}
 
 <table class="table table-striped table-hover">
 
 <thead>
-
 <tr>
-
 <th>닉네임</th>
 <th>당첨 품목</th>
 <th>결과</th>
-
 </tr>
-
 </thead>
 
 <tbody>
 
-{% for row in winners %}
+{% for row in equipment %}
 
 <tr>
 
 {% if row[0] == "유찰" %}
 
-<td class="text-danger fw-bold">
-유찰
-</td>
-
-<td class="text-danger fw-bold">
-{{ row[1] }}
-</td>
-
-<td class="text-danger fw-bold">
--
-</td>
+<td class="text-danger fw-bold">유찰</td>
+<td class="text-danger fw-bold">{{ row[1] }}</td>
+<td class="text-danger fw-bold">-</td>
 
 {% else %}
 
@@ -971,18 +1000,76 @@ onclick="loadEntries()">
 
 </table>
 
-{% else %}
-
-<div class="result-box">
-아직 추첨 결과가 없습니다.
-</div>
-
-
 {% endif %}
 
 </div>
 
+<!-- 악세사리 -->
+<div class="tab-pane fade" id="accessory">
+
+<table class="table table-striped table-hover">
+
+<tbody>
+
+{% for row in accessory %}
+
+<tr>
+<td>{{ row[0] }}</td>
+<td>{{ row[1] }}</td>
+<td>{{ row[2] }}</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
 </div>
+
+<!-- 엠블럼 -->
+<div class="tab-pane fade" id="emblem">
+
+<table class="table table-striped table-hover">
+
+<tbody>
+
+{% for row in emblem %}
+
+<tr>
+<td>{{ row[0] }}</td>
+<td>{{ row[1] }}</td>
+<td>{{ row[2] }}</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+<!-- 기타 -->
+<div class="tab-pane fade" id="etc">
+
+<table class="table table-striped table-hover">
+
+<tbody>
+
+{% for row in etc_items %}
+
+<tr>
+<td>{{ row[0] }}</td>
+<td>{{ row[1] }}</td>
+<td>{{ row[2] }}</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
 
 </div>
 
@@ -1144,6 +1231,6 @@ toggleQuantityBox();
 </script>
 
 
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
