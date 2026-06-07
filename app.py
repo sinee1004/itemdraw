@@ -217,11 +217,7 @@ def run_draw():
                 applicants,
                 min(winner_count, len(applicants))
             )
-            print(
-                f"{item_name} 신청자:{len(applicants)} "
-                f"당첨설정:{winner_count} "
-                f"실제당첨:{len(selected)}"
-)
+           
             for winner in selected:
 
                 cur.execute(
@@ -580,7 +576,7 @@ async def admin(
     cur.execute("""
     SELECT nickname,item_name,entry_number
     FROM entries
-    ORDER BY id DESC
+    ORDER BY nickname ASC, item_name ASC
     """)
 
     entries = cur.fetchall()
