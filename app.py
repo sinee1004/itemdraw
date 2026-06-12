@@ -591,7 +591,7 @@ async def admin(
     cur = conn.cursor()
 
     cur.execute("""
-    SELECT nickname,item_name,entry_number
+    SELECT id,nickname,item_name,entry_number
     FROM entries
     ORDER BY nickname ASC, item_name ASC
     """)
@@ -870,3 +870,31 @@ async def cancel_entry(
     conn.close()
 
     return {"success": True}
+
+@app.post("/delete_entry/{entry_id}")
+async def delete_entry(
+    entry_id: int,
+    admin: str = Cookie(None)
+):
+
+    if admin != "yes":
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM entries WHERE id=?",
+        (entry_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )
