@@ -654,7 +654,7 @@ async def admin(
                 auction_status = "개찰완료"
 
             auction_end_time = row[1] or ""
-
+            print("auction_end_time =", auction_end_time)
     except Exception:
         pass
 
