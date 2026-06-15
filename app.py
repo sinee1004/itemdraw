@@ -1039,8 +1039,8 @@ async def stop_auction():
     cur.execute(
         """
         UPDATE auction_settings
-        SET status='stopped'
-        end_time=null
+        SET status='stopped',
+            end_time=null
         WHERE id=1
         """
     )
