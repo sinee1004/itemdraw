@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 import sqlite3
 import random
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 app = FastAPI()
 from fastapi.staticfiles import StaticFiles
@@ -964,7 +965,9 @@ async def start_auction(
     conn = get_db()
     cur = conn.cursor()
 
-    start_time = datetime.now()
+    start_time = datetime.now(
+        ZoneInfo("Asia/Seoul")
+    )
 
     if auto_reveal == 1:
         end_time = start_time + timedelta(
