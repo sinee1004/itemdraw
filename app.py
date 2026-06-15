@@ -610,7 +610,10 @@ async def admin(
 ):
 
     if admin != "yes":
-        return RedirectResponse("/login", status_code=303)
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
 
     conn = get_db()
     cur = conn.cursor()
@@ -620,15 +623,36 @@ async def admin(
     FROM entries
     ORDER BY nickname ASC, item_name ASC
     """)
-
     entries = cur.fetchall()
 
     cur.execute("""
     SELECT id,item_name,category,winner_count
     FROM items
     """)
-
     items = cur.fetchall()
+
+    auction_status = "종료"
+
+    try:
+
+        cur.execute("""
+        SELECT status
+        FROM auction_settings
+        WHERE id=1
+        """)
+
+        row = cur.fetchone()
+
+        if row:
+
+            if row[0] == "running":
+                auction_status = "진행중"
+
+            elif row[0] == "revealed":
+                auction_status = "개찰완료"
+
+    except:
+        pass
 
     conn.close()
 
@@ -637,9 +661,11 @@ async def admin(
         name="admin.html",
         context={
             "entries": entries,
-            "items": items
+            "items": items,
+            "auction_status": auction_status
         }
     )
+
 
 @app.get("/draw")
 async def draw(

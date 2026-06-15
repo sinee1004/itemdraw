@@ -56,6 +56,13 @@ class="btn btn-secondary">
 
     <div class="card-body">
 
+    <div class="alert alert-info mb-3">
+
+        현재 상태 :
+        <strong>{{ auction_status }}</strong>
+
+    </div>
+
         <form action="/start_auction" method="post">
 
             <div class="row">
@@ -160,6 +167,7 @@ class="btn btn-secondary">
 
 <div class="card-body">
 
+    
 <form action="/add_item" method="post">
 
 <div class="row">
