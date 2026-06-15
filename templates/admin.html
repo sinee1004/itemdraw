@@ -56,10 +56,15 @@ class="btn btn-secondary">
 
     <div class="card-body">
 
-    <div class="alert alert-info mb-3">
+     <div class="alert alert-info mb-3">
 
         현재 상태 :
         <strong>{{ auction_status }}</strong>
+
+        <br><br>
+
+        남은 시간 :
+        <strong id="countdown">계산중...</strong>
 
     </div>
 
@@ -388,6 +393,50 @@ function updateLabel() {
 category.addEventListener("change", updateLabel);
 
 updateLabel();
+
+const endTime = "{{ auction_end_time }}";
+
+if (endTime) {
+
+    function updateCountdown() {
+
+        const end = new Date(endTime);
+        const now = new Date();
+
+        const diff = end - now;
+
+        if (diff <= 0) {
+
+            document.getElementById(
+                "countdown"
+            ).innerText = "00:00";
+
+            return;
+        }
+
+        const minutes = Math.floor(
+            diff / 1000 / 60
+        );
+
+        const seconds = Math.floor(
+            (diff / 1000) % 60
+        );
+
+        document.getElementById(
+            "countdown"
+        ).innerText =
+            String(minutes).padStart(2, "0")
+            + ":"
+            + String(seconds).padStart(2, "0");
+    }
+
+    updateCountdown();
+
+    setInterval(
+        updateCountdown,
+        1000
+    );
+}
 
 </script>
 

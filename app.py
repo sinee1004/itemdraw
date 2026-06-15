@@ -1,4 +1,5 @@
 from unicodedata import category
+from urllib import request
 
 from fastapi import FastAPI, Request, Form, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -632,11 +633,12 @@ async def admin(
     items = cur.fetchall()
 
     auction_status = "종료"
+    auction_end_time = ""
 
     try:
 
         cur.execute("""
-        SELECT status
+        SELECT status, end_time
         FROM auction_settings
         WHERE id=1
         """)
@@ -651,7 +653,9 @@ async def admin(
             elif row[0] == "revealed":
                 auction_status = "개찰완료"
 
-    except:
+            auction_end_time = row[1] or ""
+
+    except Exception:
         pass
 
     conn.close()
@@ -662,9 +666,12 @@ async def admin(
         context={
             "entries": entries,
             "items": items,
-            "auction_status": auction_status
+            "auction_status": auction_status,
+            "auction_end_time": auction_end_time
         }
+    
     )
+
 
 
 @app.get("/draw")
