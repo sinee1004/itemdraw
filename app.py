@@ -648,16 +648,56 @@ async def admin(
 
         if row:
 
-            if row[0] == "running":
-                auction_status = "진행중"
+            status = row[0]
+            auction_end_time = row[1] or ""
 
-            elif row[0] == "revealed":
+            if (
+                status == "running"
+                and auction_end_time
+            ):
+
+                end_dt = datetime.strptime(
+                    auction_end_time,
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+                now_dt = datetime.now(
+                    ZoneInfo("Asia/Seoul")
+                ).replace(tzinfo=None)
+
+                if now_dt >= end_dt:
+                    print("AUTO REVEAL START")  
+                          
+                    run_draw()
+
+                    cur.execute("""
+                    UPDATE auction_settings
+                    SET status='revealed'
+                    WHERE id=1
+                    """)
+
+                    conn.commit()
+
+                    auction_status = "개찰완료"
+
+                else:
+
+                    auction_status = "진행중"
+
+            elif status == "revealed":
+
                 auction_status = "개찰완료"
 
-            auction_end_time = row[1] or ""
-            print("auction_end_time =", auction_end_time)
-    except Exception:
-        pass
+            else:
+
+                auction_status = "종료"
+
+            print(
+                "auction_end_time =",
+                auction_end_time
+            )
+    except Exception as e:
+        print("ADMIN ERROR =", e)
 
     conn.close()
 
