@@ -28,11 +28,6 @@ rel="stylesheet">
 
 <div class="d-flex gap-2 mb-4">
 
-<a href="/draw"
-class="btn btn-primary"
-onclick="return confirm('즉시 추첨하시겠습니까?')">
-🎲 추첨 실행
-</a>
 
 <a href="/results"
 class="btn btn-success">
@@ -136,7 +131,11 @@ class="btn btn-secondary">
 
         <div class="d-flex gap-2">
 
-            <form action="/reveal_auction" method="post">
+            <form
+                action="/reveal_auction"
+                method="post"
+                onsubmit="return confirm('즉시 개찰을 진행하시겠습니까?\n개찰 후 결과가 확정됩니다.');"
+            >
 
                 <button
                     class="btn btn-warning"
