@@ -970,7 +970,9 @@ async def start_auction(
         end_time = start_time + timedelta(
             minutes=reveal_minutes
         )
-        end_time_str = end_time.isoformat()
+        end_time_str = end_time.strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
     else:
         end_time_str = None
 
