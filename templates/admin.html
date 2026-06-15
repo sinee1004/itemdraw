@@ -48,7 +48,110 @@ class="btn btn-secondary">
 로그아웃 </a>
 
 </div>
+<div class="card shadow mb-4">
 
+    <div class="card-header bg-danger text-white">
+        🏆 경매 관리
+    </div>
+
+    <div class="card-body">
+
+        <form action="/start_auction" method="post">
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <label class="form-label">
+                        자동 개찰 시간
+                    </label>
+
+                    <select
+                        class="form-select"
+                        name="reveal_minutes">
+
+                        <option value="5">5분</option>
+                        <option value="10" selected>10분</option>
+                        <option value="15">15분</option>
+                        <option value="20">20분</option>
+                        <option value="30">30분</option>
+                        <option value="60">60분</option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label class="form-label">
+                        개찰 방식
+                    </label>
+
+                    <select
+                        class="form-select"
+                        name="auto_reveal">
+
+                        <option value="1" selected>
+                            자동 개찰
+                        </option>
+
+                        <option value="0">
+                            수동 개찰
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-4 d-flex align-items-end">
+
+                    <button
+                        class="btn btn-success w-100"
+                        type="submit">
+
+                        ▶ 경매 시작
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+        <hr>
+
+        <div class="d-flex gap-2">
+
+            <form action="/reveal_auction" method="post">
+
+                <button
+                    class="btn btn-warning"
+                    type="submit">
+
+                    🔓 즉시 개찰
+
+                </button>
+
+            </form>
+
+            <form action="/stop_auction" method="post">
+
+                <button
+                    class="btn btn-danger"
+                    type="submit">
+
+                    ⛔ 경매 종료
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
 <div class="card shadow mb-4">
 
 <div class="card-header bg-primary text-white">

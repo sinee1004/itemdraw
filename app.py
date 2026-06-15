@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import sqlite3
 import random
+from datetime import datetime, timedelta
 
 app = FastAPI()
 from fastapi.staticfiles import StaticFiles
@@ -56,7 +57,31 @@ def init_db():
         entry_number TEXT
     )
     """)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS auction_settings(
+        id INTEGER PRIMARY KEY,
+        status TEXT DEFAULT 'stopped',
+        auto_reveal INTEGER DEFAULT 1,
+        reveal_minutes INTEGER DEFAULT 10,
+        start_time TEXT,
+        end_time TEXT
+    )
+    """)
 
+    cur.execute("""
+    INSERT OR IGNORE INTO auction_settings(
+        id,
+        status,
+        auto_reveal,
+        reveal_minutes
+    )
+    VALUES(
+        1,
+        'stopped',
+        1,
+        10
+    )
+    """)
     # 기존 DB 사용 중일 경우 quantity 컬럼 추가
     try:
         cur.execute("""
@@ -889,6 +914,99 @@ async def delete_entry(
     cur.execute(
         "DELETE FROM entries WHERE id=?",
         (entry_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )
+@app.post("/start_auction")
+async def start_auction(
+    reveal_minutes: int = Form(...),
+    auto_reveal: int = Form(...)
+):
+    conn = get_db()
+    cur = conn.cursor()
+
+    start_time = datetime.now()
+
+    if auto_reveal == 1:
+        end_time = start_time + timedelta(
+            minutes=reveal_minutes
+        )
+        end_time_str = end_time.isoformat()
+    else:
+        end_time_str = None
+
+    cur.execute(
+        """
+        UPDATE auction_settings
+        SET
+            status=?,
+            auto_reveal=?,
+            reveal_minutes=?,
+            start_time=?,
+            end_time=?
+        WHERE id=1
+        """,
+        (
+            "running",
+            auto_reveal,
+            reveal_minutes,
+            start_time.isoformat(),
+            end_time_str
+        )
+    )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )
+
+
+@app.post("/reveal_auction")
+async def reveal_auction():
+
+    run_draw()
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE auction_settings
+        SET status='revealed'
+        WHERE id=1
+        """
+    )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/results",
+        status_code=303
+    )
+
+
+@app.post("/stop_auction")
+async def stop_auction():
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE auction_settings
+        SET status='stopped'
+        WHERE id=1
+        """
     )
 
     conn.commit()
