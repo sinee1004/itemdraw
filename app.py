@@ -1040,6 +1040,7 @@ async def stop_auction():
         """
         UPDATE auction_settings
         SET status='stopped'
+        end_time=null
         WHERE id=1
         """
     )

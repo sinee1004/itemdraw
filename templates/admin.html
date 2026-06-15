@@ -396,13 +396,19 @@ updateLabel();
 
 const endTime = "{{ auction_end_time }}";
 
-if (endTime) {
+console.log("endTime =", endTime);
+
+if (
+    endTime &&
+    "{{ auction_status }}" === "진행중"
+) {
 
     function updateCountdown() {
 
         const end = new Date(
             endTime.replace(" ", "T")
         );
+
         const now = new Date();
 
         const diff = end - now;
@@ -428,8 +434,8 @@ if (endTime) {
             "countdown"
         ).innerText =
             String(minutes).padStart(2, "0")
-            + ":"
-            + String(seconds).padStart(2, "0");
+            + ":" +
+            String(seconds).padStart(2, "0");
     }
 
     updateCountdown();
@@ -438,6 +444,14 @@ if (endTime) {
         updateCountdown,
         1000
     );
+
+}
+else {
+
+    document.getElementById(
+        "countdown"
+    ).innerText = "-";
+
 }
 
 </script>
