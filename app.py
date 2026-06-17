@@ -1589,7 +1589,7 @@ async def delete_user(
             (nickname,)
         )
 
-        # 회원 삭제
+        # 회원삭제
         cur.execute(
             "DELETE FROM users WHERE id=?",
             (user_id,)
