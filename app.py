@@ -8,7 +8,6 @@ from fastapi.templating import Jinja2Templates
 import sqlite3
 import random
 import hashlib
-from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -121,46 +120,6 @@ def init_db():
 init_db()
 
 
-# ===========================
-# ⭐ 기여도 자동 초기화 함수
-# ===========================
-def reset_contribution_points():
-
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("""
-    UPDATE users
-    SET contribution_points = 0
-    """)
-
-    conn.commit()
-    conn.close()
-
-    print(
-        f"[{datetime.now(ZoneInfo('Asia/Seoul'))}] "
-        "✅ 매주 월요일 기여도 자동 초기화 완료"
-    )
-
-
-# ===========================
-# ⭐ 매주 월요일 00:00 자동 실행
-# ===========================
-scheduler = BackgroundScheduler(
-    timezone=ZoneInfo("Asia/Seoul")
-)
-
-scheduler.add_job(
-    reset_contribution_points,
-    trigger="cron",
-    day_of_week="mon",
-    hour=0,
-    minute=0,
-    id="weekly_reset_contribution",
-    replace_existing=True
-)
-
-scheduler.start()
 
 
 def get_category(item_name):
@@ -1641,5 +1600,28 @@ async def delete_user(
 
     return RedirectResponse(
         "/member_admin",
+        status_code=303
+    )
+
+@app.post("/reset_contribution")
+async def reset_contribution(
+    admin: str = Cookie(None)
+):
+    if admin != "yes":
+        return RedirectResponse("/login", status_code=303)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE users
+    SET contribution_points = 0
+    """)
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/contribution_admin",
         status_code=303
     )

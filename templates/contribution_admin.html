@@ -223,7 +223,19 @@ rel="stylesheet">
                                         ➖ -3
                                     </button>
                                 </form>
-                                
+                                <form
+                                    action="/reset_contribution"
+                                    method="post"
+                                    onsubmit="return confirm('모든 회원의 기여도를 0으로 초기화하시겠습니까?');"
+                                    class="mb-3">
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-danger">
+                                        🔄 전체 기여도 초기화
+                                    </button>
+
+                                </form>
                             </div>
 
                         </td>
