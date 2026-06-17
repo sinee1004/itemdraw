@@ -745,20 +745,57 @@ body::before{
 
 <form id="applyForm">
 
-<div class="mb-3">
+{% if user %}
 
-<label class="form-label fw-bold">
-닉네임
-</label>
+<div class="alert alert-success d-flex justify-content-between align-items-center">
 
-<input
-class="form-control"
-type="text"
-name="nickname"
-placeholder="닉네임 입력"
-required>
+    <div>
+        👤 <strong>{{ user }}</strong> 님 로그인 중
+        <br>
+
+        ⭐ 현재 기여도 :
+        <span
+            style="
+                font-size:16px;
+                font-weight:600;
+            ">
+            {{ contribution_points }} 점
+        </span>
+    </div>
+
+    <a
+        href="/user_logout"
+        class="btn btn-sm btn-danger">
+        로그아웃
+    </a>
 
 </div>
+
+{% else %}
+
+<div class="alert alert-warning">
+
+    로그인 후 신청 가능합니다.
+
+    <div class="mt-2">
+
+        <a
+            href="/user_login"
+            class="btn btn-primary btn-sm">
+            로그인
+        </a>
+
+        <a
+            href="/register"
+            class="btn btn-success btn-sm">
+            회원가입
+        </a>
+
+    </div>
+
+</div>
+
+{% endif %}
 
 <div class="mb-4">
 
@@ -804,15 +841,47 @@ value="1">
 
 </div>
 
+<div class="mt-3">
+
+    <label class="form-label fw-bold">
+        ⭐ 사용할 기여도 포인트
+    </label>
+
+    <input
+        class="form-control"
+        type="number"
+        name="contribution_used"
+        min="0"
+        value="0">
+
+    <small class="text-muted">
+        • 보유 기여도 이하만 입력 가능합니다.<br>
+        • 당첨 시에만 기여도 포인트가 차감됩니다.<br>
+        • 동일 기여도일 경우 무작위로 당첨자가 결정됩니다.
+    </small>
+
+</div>
+
 <div class="d-grid">
+
+{% if user %}
 
 <button
 class="btn btn-success btn-lg"
 type="submit">
-
 신청하기
-
 </button>
+
+{% else %}
+
+<button
+class="btn btn-secondary btn-lg"
+type="button"
+disabled>
+로그인 후 신청 가능
+</button>
+
+{% endif %}
 
 </div>
 
@@ -885,11 +954,25 @@ type="submit">
 
 <div class="input-group mb-3">
 
+{% if user %}
+
 <input
 class="form-control"
 type="text"
 id="searchNickname"
-placeholder="닉네임 입력">
+value="{{ user }}"
+readonly>
+
+{% else %}
+
+<input
+class="form-control"
+type="text"
+id="searchNickname"
+placeholder="로그인 필요"
+readonly>
+
+{% endif %}
 
 <button
 class="btn btn-primary"
@@ -1117,14 +1200,8 @@ document.getElementById("applyForm")
 // 내 신청 조회
 async function loadEntries() {
 
-    const nickname = document.getElementById("searchNickname").value;
-
-    const formData = new FormData();
-    formData.append("nickname", nickname);
-
     const response = await fetch("/my_entries", {
-        method: "POST",
-        body: formData
+        method: "POST"
     });
 
     const data = await response.json();
@@ -1145,6 +1222,7 @@ async function loadEntries() {
         <table class="table table-bordered">
             <tr>
                 <th>품목</th>
+                <th>사용 기여도</th>
                 <th>접수번호</th>
                 <th>관리</th>
             </tr>
@@ -1155,6 +1233,7 @@ async function loadEntries() {
             html += `
             <tr>
                 <td>${row.item_name}</td>
+                <td>⭐ ${row.contribution_used}</td>
                 <td>${row.entry_number}</td>
                 <td>
                     <button
