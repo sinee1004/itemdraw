@@ -186,7 +186,7 @@ def run_draw():
 
     for item_name, category, winner_count in items:
 
-        # 기타 품목
+        # 기타  품목
         if category == "기타":
 
             cur.execute(
