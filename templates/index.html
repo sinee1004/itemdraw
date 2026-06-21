@@ -753,14 +753,17 @@ body::before{
         👤 <strong>{{ user }}</strong> 님 로그인 중
         <br>
 
-        ⭐ 현재 기여도 :
-        <span
-            style="
-                font-size:16px;
-                font-weight:600;
-            ">
-            {{ contribution_points }} 점
-        </span>
+        ⭐ 총 기여도 :
+        <strong>{{ contribution_points }}점</strong>
+        <br>
+
+        📌 입찰 사용 기여도 :
+        <strong>{{ used_points }}점</strong>
+        <br>
+
+        ✅ 남은 사용 가능 :
+        <strong>{{ available_points }}점</strong>
+        
     </div>
 
     <a
@@ -851,13 +854,14 @@ value="1">
         class="form-control"
         type="number"
         name="contribution_used"
-        min="0"
-        value="0">
+        id="contributionInput"
+        min="1"
+        value="1">
 
-    <small class="text-muted">
-        • 보유 기여도 이하만 입력 가능합니다.<br>
-        • 당첨 시에만 기여도 포인트가 차감됩니다.<br>
-        • 동일 기여도일 경우 무작위로 당첨자가 결정됩니다.
+    <small
+        class="text-muted"
+        id="pointGuide">
+        장비 최대 10점
     </small>
 
 </div>
@@ -1182,6 +1186,7 @@ document.getElementById("applyForm")
         document.getElementById("result").innerHTML = `
         <div class="alert alert-success text-center">
             <h5>✅ 신청이 완료되었습니다</h5>
+            <p>사용 기여도: ⭐ ${data.used_point}점</p>
         </div>
         `;
 
@@ -1291,13 +1296,44 @@ function toggleQuantityBox() {
     const category =
         selected.dataset.category;
 
+    // 기타 수량 입력 표시
     if (category === "기타") {
-
         quantityBox.style.display = "block";
-
     } else {
-
         quantityBox.style.display = "none";
+    }
+
+    // ⭐ 기여도 최대값 설정
+    const contributionInput =
+        document.getElementById("contributionInput");
+
+    const pointGuide =
+        document.getElementById("pointGuide");
+
+    if (category === "장비") {
+        contributionInput.max = 10;
+        contributionInput.value = 1;
+        pointGuide.innerText = "장비 최대 10점";
+    }
+    else if (category === "악세사리") {
+        contributionInput.max = 10;
+        contributionInput.value = 1;
+        pointGuide.innerText = "악세사리 최대 10점";
+    }
+    else if (category === "엠블럼") {
+        contributionInput.max = 5;
+        contributionInput.value = 1;
+        pointGuide.innerText = "엠블럼 최대 5점";
+    }
+    else if (category === "기타") {
+        const qty =
+            parseInt(
+                document.querySelector('input[name="quantity"]').value
+            ) || 1;
+
+        contributionInput.max = qty;
+        contributionInput.value = 1;   // ⭐ 추가
+        pointGuide.innerText = `기타 최대 ${qty}점`;
     }
 }
 
@@ -1307,6 +1343,11 @@ itemSelect.addEventListener(
 );
 
 toggleQuantityBox();
+
+document
+    .querySelector('input[name="quantity"]')
+    .addEventListener("input", toggleQuantityBox);
+
 </script>
 
 

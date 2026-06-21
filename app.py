@@ -113,6 +113,14 @@ def init_db():
     except:
         pass
 
+    try:
+        cur.execute("""
+        ALTER TABLE users
+        ADD COLUMN reserved_points INTEGER DEFAULT 0
+        """)
+    except:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -334,6 +342,8 @@ def run_draw():
                         winner[0]
                     )
                 )
+
+    cur.execute("DELETE FROM entries")
 
     conn.commit()
     conn.close()
@@ -612,10 +622,13 @@ async def home(
 
     # 현재 로그인한 사용자의 기여도 조회
     contribution_points = 0
+    used_points = 0
+    available_points = 0
 
     if user:
         decoded_user = unquote(user)
 
+        # 총 기여도
         cur.execute("""
         SELECT contribution_points
         FROM users
@@ -626,6 +639,18 @@ async def home(
 
         if point_row:
             contribution_points = point_row[0]
+
+        # 입찰에 사용 중인 기여도
+        cur.execute("""
+        SELECT COALESCE(SUM(contribution_used), 0)
+        FROM entries
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        used_points = cur.fetchone()[0]
+
+        # 남은 사용 가능 기여도
+        available_points = contribution_points - used_points
 
     equipment = []
     accessory = []
@@ -699,14 +724,18 @@ async def home(
             "emblem": emblem,
             "etc_items": etc_items,
             "user": unquote(user) if user else None,
-            "contribution_points": contribution_points
+            "contribution_points": contribution_points,
+            "used_points": used_points,
+            "available_points": available_points
         }
     )
+
+
 @app.post("/apply")
 async def apply(
     item_name: str = Form(...),
     quantity: int = Form(1),
-    contribution_used: int = Form(0),
+    contribution_used: int = Form(...),   # ⭐ 다시 추가
     user: str = Cookie(None)
 ):
     if not user:
@@ -729,13 +758,70 @@ async def apply(
     row = cur.fetchone()
     current_points = row[0] if row else 0
 
-    if contribution_used > current_points:
+    # 이미 입찰에 사용한 포인트 합계
+    cur.execute("""
+    SELECT COALESCE(SUM(contribution_used), 0)
+    FROM entries
+    WHERE nickname=?
+    """, (nickname,))
+
+    used_points = cur.fetchone()[0]
+
+    available_points = current_points - used_points
+
+    # ⭐ 카테고리별 자동 기여도 계산
+    category = get_category(item_name)
+
+    if quantity < 1:
         conn.close()
         return {
             "success": False,
-            "message": "보유한 기여도 포인트보다 많이 사용할 수 없습니다."
+            "message": "수량은 1개 이상이어야 합니다."
         }
-    category = get_category(item_name)
+
+    if contribution_used < 1:
+        conn.close()
+        return {
+            "success": False,
+            "message": "기여도는 1점 이상 입력해야 합니다."
+        }
+
+    if category == "장비" and contribution_used > 10:
+        conn.close()
+        return {
+            "success": False,
+            "message": "장비는 최대 10점까지 입찰 가능합니다."
+        }
+
+    if category == "악세사리" and contribution_used > 10:
+        conn.close()
+        return {
+            "success": False,
+            "message": "악세사리는 최대 10점까지 입찰 가능합니다."
+        }
+
+    if category == "엠블럼" and contribution_used > 5:
+        conn.close()
+        return {
+            "success": False,
+            "message": "엠블럼은 최대 5점까지 입찰 가능합니다."
+        }
+    max_point = quantity * 1
+
+    if category == "기타" and contribution_used > max_point:
+        conn.close()
+        return {
+            "success": False,
+            "message": f"기타는 최대 {max_point}점까지 입찰 가능합니다."
+        }
+    if contribution_used > available_points:
+        conn.close()
+        return {
+            "success": False,
+            "message": f"남은 기여도는 {available_points}점입니다."
+        }
+    
+        
 
     # 동일 품목 중복 신청 방지
     cur.execute(
@@ -854,7 +940,8 @@ async def apply(
 
     return {
         "success": True,
-        "entry_number": entry_number
+        "entry_number": entry_number,
+        "used_point": contribution_used
     }
 
 
