@@ -464,7 +464,7 @@ async def register(
     if cur.fetchone():
         conn.close()
         return HTMLResponse(
-            "<h3>이미 사용 중인 닉네임입니다.</h3>"
+            "<h3>이미 사용중인 닉네임입니다.</h3>"
         )
 
     # 비밀번호 해시
