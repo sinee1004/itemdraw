@@ -782,11 +782,11 @@ async def apply(
             "message": "수량은 1개 이상이어야 합니다."
         }
 
-    if category != "기타" and contribution_used < 1:
+    if category != "기타" and contribution_used < 0:
         conn.close()
         return {
             "success": False,
-            "message": "기여도는 1점 이상 입력해야 합니다."
+            "message": "기여도는 0점 이상 입력해야 합니다."
         }
 
     if category == "장비" and contribution_used > 10:
