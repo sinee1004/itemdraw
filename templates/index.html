@@ -844,7 +844,9 @@ value="1">
 
 </div>
 
-<div class="mt-3">
+<div
+    class="mt-3"
+    id="contributionBox">
 
     <label class="form-label fw-bold">
         ⭐ 사용할 기여도 포인트
@@ -1183,12 +1185,32 @@ document.getElementById("applyForm")
 
     if (data.success) {
 
-        document.getElementById("result").innerHTML = `
-        <div class="alert alert-success text-center">
-            <h5>✅ 신청이 완료되었습니다</h5>
-            <p>사용 기여도: ⭐ ${data.used_point}점</p>
-        </div>
-        `;
+        const category =
+            itemSelect.options[itemSelect.selectedIndex].dataset.category;
+
+        let message = "";
+
+        if (category === "기타") {
+
+            message = `
+            <div class="alert alert-success text-center">
+                <h5>✅ 신청이 완료되었습니다</h5>
+                <p>📦 기타 품목 신청 완료</p>
+            </div>
+            `;
+
+        } else {
+
+            message = `
+            <div class="alert alert-success text-center">
+                <h5>✅ 신청이 완료되었습니다</h5>
+                <p>⭐ 사용 기여도: ${data.used_point}점</p>
+            </div>
+            `;
+
+        }
+
+        document.getElementById("result").innerHTML = message;
 
     } else {
 
@@ -1197,7 +1219,8 @@ document.getElementById("applyForm")
             ${data.message}
         </div>
         `;
-    }
+
+    }       
 
 });
 
@@ -1283,6 +1306,9 @@ const itemSelect =
 const quantityBox =
     document.getElementById("quantityBox");
 
+const contributionBox =
+    document.getElementById("contributionBox");    
+
 function toggleQuantityBox() {
 
     if (itemSelect.selectedIndex < 0) {
@@ -1298,9 +1324,17 @@ function toggleQuantityBox() {
 
     // 기타 수량 입력 표시
     if (category === "기타") {
+
         quantityBox.style.display = "block";
+
+        contributionBox.style.display = "none";
+
     } else {
+
         quantityBox.style.display = "none";
+
+        contributionBox.style.display = "block";
+
     }
 
     // ⭐ 기여도 최대값 설정
@@ -1343,6 +1377,7 @@ itemSelect.addEventListener(
 );
 
 toggleQuantityBox();
+
 
 document
     .querySelector('input[name="quantity"]')

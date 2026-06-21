@@ -735,7 +735,7 @@ async def home(
 async def apply(
     item_name: str = Form(...),
     quantity: int = Form(1),
-    contribution_used: int = Form(...),   # ⭐ 다시 추가
+    contribution_used: int = Form(0),   # ⭐ 다시 추가
     user: str = Cookie(None)
 ):
     if not user:
@@ -771,6 +771,9 @@ async def apply(
 
     # ⭐ 카테고리별 자동 기여도 계산
     category = get_category(item_name)
+    if category == "기타":
+        contribution_used = 0
+
 
     if quantity < 1:
         conn.close()
@@ -779,7 +782,7 @@ async def apply(
             "message": "수량은 1개 이상이어야 합니다."
         }
 
-    if contribution_used < 1:
+    if category != "기타" and contribution_used < 1:
         conn.close()
         return {
             "success": False,
@@ -806,21 +809,14 @@ async def apply(
             "success": False,
             "message": "엠블럼은 최대 5점까지 입찰 가능합니다."
         }
-    max_point = quantity * 1
-
-    if category == "기타" and contribution_used > max_point:
-        conn.close()
-        return {
-            "success": False,
-            "message": f"기타는 최대 {max_point}점까지 입찰 가능합니다."
-        }
-    if contribution_used > available_points:
+    
+    if category != "기타" and contribution_used > available_points:
         conn.close()
         return {
             "success": False,
             "message": f"남은 기여도는 {available_points}점입니다."
         }
-    
+        
         
 
     # 동일 품목 중복 신청 방지
