@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 import sqlite3
 import random
 import hashlib
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -1707,4 +1708,19 @@ async def reset_contribution(
     return RedirectResponse(
         "/contribution_admin",
         status_code=303
+    )
+
+@app.get("/download_db")
+async def download_db(admin: str = Cookie(None)):
+
+    if admin != "yes":
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
+
+    return FileResponse(
+        path="itemdraw.db",
+        filename="itemdraw.db",
+        media_type="application/octet-stream"
     )
