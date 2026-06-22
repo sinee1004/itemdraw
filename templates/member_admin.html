@@ -14,70 +14,219 @@ rel="stylesheet">
 
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between mb-3">
-        <h2>👥 회원 관리</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">👥 회원 관리</h2>
 
         <a href="/admin" class="btn btn-secondary">
             ← 관리자 페이지
         </a>
     </div>
 
-    <table class="table table-bordered table-hover align-middle">
+    <!-- 기여도 지급 -->
+    <form action="/give_contribution" method="post">
 
-        <thead class="table-dark">
-            <tr>
-                <th>닉네임</th>
-                <th>기여도</th>
-                <th>가입일</th>
-                <th>관리</th>
-            </tr>
-        </thead>
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
 
-        <tbody>
+            <button
+                type="button"
+                class="btn btn-outline-primary"
+                onclick="selectAllUsers()">
+                ☑ 전체 선택
+            </button>
 
-        {% for user in users %}
+            <button
+                type="button"
+                class="btn btn-outline-secondary"
+                onclick="clearAllUsers()">
+                ☐ 선택 해제
+            </button>
 
-            <tr>
+            <span class="fw-bold ms-2">
+                기여도
+            </span>
 
-                <td>{{ user[1] }}</td>
+            <input
+                type="number"
+                name="points"
+                class="form-control"
+                style="width:100px"
+                value="0"
+                min="0"
+                required>
 
-                <td>⭐ {{ user[2] }}</td>
+            <button
+                type="submit"
+                class="btn btn-success"
+                onclick="return confirm('선택한 회원에게 기여도를 지급하시겠습니까?');">
 
-                <td>{{ user[3] }}</td>
+                🎁 선택 회원 기여도 지급
 
-                <td>
+            </button>
 
-                    <form
-                        action="/delete_user"
-                        method="post"
-                        onsubmit="return confirm('정말 이 회원을 삭제하시겠습니까?\\n신청 내역과 당첨 내역도 함께 삭제됩니다.');">
+            <button
+                type="button"
+                class="btn btn-warning"
+                onclick="weeklyGive()">
+
+                ⭐ 전체 회원 주간 기여도 +10 지급
+
+            </button>
+
+        </div>
+
+        <table class="table table-bordered table-hover align-middle">
+
+            <thead class="table-dark">
+
+                <tr>
+
+                    <th style="width:70px;">선택</th>
+                    <th>닉네임</th>
+                    <th style="width:120px;">기여도</th>
+                    <th style="width:200px;">가입일</th>
+                    <th style="width:150px;">관리</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for user in users %}
+
+                <tr>
+
+                    <td class="text-center">
 
                         <input
-                            type="hidden"
-                            name="user_id"
+                            type="checkbox"
+                            class="user-check"
+                            name="user_ids"
                             value="{{ user[0] }}">
 
+                    </td>
+
+                    <td>
+
+                        {{ user[1] }}
+
+                    </td>
+
+                    <td>
+
+                        ⭐ {{ user[2] }}
+
+                    </td>
+
+                    <td>
+
+                        {{ user[3] }}
+
+                    </td>
+
+                    <td class="text-center">
+
                         <button
+                            type="button"
                             class="btn btn-danger btn-sm"
-                            type="submit">
+                            onclick="deleteUser({{ user[0] }})">
 
                             🗑️ 회원 삭제
 
                         </button>
 
-                    </form>
+                    </td>
 
-                </td>
+                </tr>
 
-            </tr>
+            {% endfor %}
 
-        {% endfor %}
+            </tbody>
 
-        </tbody>
+        </table>
 
-    </table>
+    </form>
 
 </div>
+
+<!-- 회원 삭제 -->
+<form
+    id="deleteForm"
+    action="/delete_user"
+    method="post"
+    style="display:none;">
+
+    <input
+        type="hidden"
+        id="deleteUserId"
+        name="user_id">
+
+</form>
+
+<!-- 전체 기여도 지급 -->
+<form
+    id="weeklyForm"
+    action="/weekly_contribution"
+    method="post"
+    style="display:none;">
+
+</form>
+
+<script>
+
+function selectAllUsers(){
+
+    document
+        .querySelectorAll(".user-check")
+        .forEach(cb => cb.checked = true);
+
+}
+
+function clearAllUsers(){
+
+    document
+        .querySelectorAll(".user-check")
+        .forEach(cb => cb.checked = false);
+
+}
+
+function deleteUser(id){
+
+    if(
+        confirm(
+            "정말 이 회원을 삭제하시겠습니까?\n신청 내역과 당첨 내역도 함께 삭제됩니다."
+        )
+    ){
+
+        document
+            .getElementById("deleteUserId")
+            .value = id;
+
+        document
+            .getElementById("deleteForm")
+            .submit();
+
+    }
+
+}
+
+function weeklyGive(){
+
+    if(
+        confirm(
+            "전체 회원에게 주간 기여도 10점을 지급하시겠습니까?"
+        )
+    ){
+
+        document
+            .getElementById("weeklyForm")
+            .submit();
+
+    }
+
+}
+
+</script>
 
 </body>
 </html>

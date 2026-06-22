@@ -11,6 +11,9 @@ import hashlib
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from fastapi import Form
+from typing import List, Optional
+
 
 app = FastAPI()
 from fastapi.staticfiles import StaticFiles
@@ -1371,59 +1374,41 @@ async def my_entries(
 
 @app.post("/give_contribution")
 async def give_contribution(
-    user_id: int = Form(...),
+    user_ids: Optional[List[int]] = Form(None),
     points: int = Form(...),
     admin: str = Cookie(None)
 ):
-    # 관리자만 사용 가능
     if admin != "yes":
         return RedirectResponse(
             "/login",
             status_code=303
         )
 
-    conn = get_db()
-    cur = conn.cursor()
-
-    # 현재 기여도 조회
-    cur.execute(
-        """
-        SELECT contribution_points
-        FROM users
-        WHERE id=?
-        """,
-        (user_id,)
-    )
-
-    row = cur.fetchone()
-
-    if row is None:
-        conn.close()
+    # 선택된 회원이 없으면 그냥 돌아가기
+    if not user_ids:
         return RedirectResponse(
-            "/contribution_admin",
+            "/member_admin",
             status_code=303
         )
 
-    current_points = row[0]
+    conn = get_db()
+    cur = conn.cursor()
 
-    # 음수 방지
-    new_points = max(0, current_points + points)
-
-    # 기여도 업데이트
-    cur.execute(
-        """
-        UPDATE users
-        SET contribution_points=?
-        WHERE id=?
-        """,
-        (new_points, user_id)
-    )
+    for user_id in user_ids:
+        cur.execute(
+            """
+            UPDATE users
+            SET contribution_points = contribution_points + ?
+            WHERE id = ?
+            """,
+            (points, user_id)
+        )
 
     conn.commit()
     conn.close()
 
     return RedirectResponse(
-        "/contribution_admin",
+        "/member_admin",
         status_code=303
     )
 
@@ -1571,40 +1556,7 @@ async def stop_auction():
         status_code=303
     )
 
-@app.get("/contribution_admin", response_class=HTMLResponse)
-async def contribution_admin(
-    request: Request,
-    admin: str = Cookie(None)
-):
-    if admin != "yes":
-        return RedirectResponse(
-            "/login",
-            status_code=303
-        )
 
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute("""
-    SELECT
-        id,
-        nickname,
-        contribution_points
-    FROM users
-    ORDER BY nickname ASC
-    """)
-
-    users = cur.fetchall()
-
-    conn.close()
-
-    return templates.TemplateResponse(
-        request=request,
-        name="contribution_admin.html",
-        context={
-            "users": users
-        }
-    )
 
 @app.get("/member_admin", response_class=HTMLResponse)
 async def member_admin(
@@ -1706,7 +1658,7 @@ async def reset_contribution(
     conn.close()
 
     return RedirectResponse(
-        "/contribution_admin",
+        "/member_admin",
         status_code=303
     )
 
@@ -1723,4 +1675,30 @@ async def download_db(admin: str = Cookie(None)):
         path="itemdraw.db",
         filename="itemdraw.db",
         media_type="application/octet-stream"
+    )
+
+@app.post("/weekly_contribution")
+async def weekly_contribution(
+    admin: str = Cookie(None)
+):
+    if admin != "yes":
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE users
+        SET contribution_points = contribution_points + 10
+    """)
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/member_admin",
+        status_code=303
     )
