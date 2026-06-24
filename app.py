@@ -1,7 +1,6 @@
-from unicodedata import category
-from urllib import request
 from urllib.parse import quote, unquote
-
+from fastapi import UploadFile, File
+import shutil
 from fastapi import FastAPI, Request, Form, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -11,7 +10,6 @@ import hashlib
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from fastapi import Form
 from typing import List, Optional
 
 
@@ -25,7 +23,9 @@ app.mount(
 )
 templates = Jinja2Templates(directory="templates")
 
-ADMIN_PASSWORD = "1234"
+import os
+
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "1234")
 
 
 
@@ -1398,7 +1398,8 @@ async def give_contribution(
         cur.execute(
             """
             UPDATE users
-            SET contribution_points = contribution_points + ?
+            SET contribution_points =
+                MAX(0, contribution_points + ?)
             WHERE id = ?
             """,
             (points, user_id)
@@ -1700,5 +1701,32 @@ async def weekly_contribution(
 
     return RedirectResponse(
         "/member_admin",
+        status_code=303
+    )
+
+@app.post("/restore_db")
+async def restore_db(
+    file: UploadFile = File(...),
+    admin: str = Cookie(None)
+):
+
+    if admin != "yes":
+        return RedirectResponse(
+            "/login",
+            status_code=303
+        )
+
+    # 복원 전 현재 DB 백업
+    shutil.copy(
+        "itemdraw.db",
+        "itemdraw_before_restore.db"
+    )
+
+    # 새 DB 적용
+    with open("itemdraw.db", "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return RedirectResponse(
+        "/admin",
         status_code=303
     )

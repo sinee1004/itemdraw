@@ -43,6 +43,52 @@ class="btn btn-secondary">
 로그아웃 </a>
 
 </div>
+
+<div class="card shadow mb-4">
+
+    <div class="card-header bg-primary text-white">
+        💾 데이터베이스 관리
+    </div>
+
+    <div class="card-body">
+
+        <a
+            href="/download_db"
+            class="btn btn-success">
+
+            💾 DB 다운로드
+
+        </a>
+
+        <hr>
+
+        <form
+            action="/restore_db"
+            method="post"
+            enctype="multipart/form-data"
+            onsubmit="return confirm('현재 DB를 덮어씁니다. 계속하시겠습니까?');">
+
+            <input
+                type="file"
+                name="file"
+                class="form-control mb-2"
+                accept=".db"
+                required>
+
+            <button
+                type="submit"
+                class="btn btn-danger">
+
+                📥 DB 복원
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
 <div class="card shadow mb-4">
 
     <div class="card-header bg-danger text-white">
