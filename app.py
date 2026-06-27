@@ -645,6 +645,17 @@ async def attendance(
 
     return RedirectResponse("/?attendance=success", status_code=303)
 
+from fastapi import Response
+
+@app.head("/")
+async def head_root():
+    return Response(status_code=200)
+
+@app.head("/admin")
+async def head_admin():
+    return Response(status_code=200)
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(
     request: Request,
