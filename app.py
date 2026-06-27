@@ -1816,15 +1816,18 @@ async def restore_db(
             status_code=303
         )
 
-    # 복원 전 현재 DB 백업
+    # 기존 DB 백업
     shutil.copy(
         "itemdraw.db",
         "itemdraw_before_restore.db"
     )
 
-    # 새 DB 적용
+    # DB 복원
     with open("itemdraw.db", "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+
+    # ⭐ DB 연결 종료 후 최신 구조로 자동 업데이트
+    init_db()
 
     return RedirectResponse(
         "/admin",
