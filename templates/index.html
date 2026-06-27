@@ -74,7 +74,7 @@ body{
 
     border:none;
 
-    min-height:95px;
+    min-height:75px;
 
     display:flex;
 
@@ -612,8 +612,8 @@ body::before{
 }
 .title-icon{
 
-    width:28px;
-    height:28px;
+    width:22px;
+    height:22px;
 
     object-fit:contain;
 
@@ -667,7 +667,7 @@ body::before{
 
     color:#5a3b00;
 
-    font-size:30px;
+    font-size:24px;
 
     font-weight:900;
 
@@ -708,6 +708,101 @@ body::before{
 
     z-index:0;
 }
+
+.attendance-btn{
+
+    width:130px !important;
+    height:42px !important;
+
+    font-size:15px !important;
+    font-weight:700 !important;
+
+    padding:6px 10px !important;
+
+    border-radius:10px !important;
+
+    line-height:1.2 !important;
+
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+}
+
+.attendance-btn{
+
+    width:130px !important;
+    height:34px !important;
+
+    font-size:14px !important;
+    font-weight:700 !important;
+
+    padding:4px 8px !important;
+
+    border-radius:8px !important;
+
+    display:flex !important;
+    justify-content:center;
+    align-items:center;
+}
+
+.auction-timer{
+
+    width:130px;
+
+    min-height:60px;
+
+    padding:6px;
+
+    border-radius:8px;
+
+    text-align:center;
+
+    color:#fff;
+
+    background:linear-gradient(180deg,#1b4b9a,#0b2557);
+
+    border:2px solid gold;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+}
+
+.auction-timer.waiting{
+
+    background:
+        linear-gradient(
+            180deg,
+            #666,
+            #444
+        );
+}
+
+.auction-timer.ended{
+
+    background:
+        linear-gradient(
+            180deg,
+            #d63b3b,
+            #871717
+        );
+}
+
+.alert{
+
+    padding:8px 14px !important;
+
+    margin-bottom:10px !important;
+
+    font-size:16px;
+
+    border-radius:8px;
+}
+
 </style>
 
 
@@ -745,7 +840,20 @@ body::before{
 
 <form id="applyForm">
 
-{% if user %}
+{% if user %} 
+    
+{% if attendance == "success" %}
+<div class="alert alert-success text-center">
+    ✅ 출석 완료! 기여도 +1 지급되었습니다.
+</div>
+{% endif %}
+
+{% if attendance == "already" %}
+<div class="alert alert-warning text-center">
+    ⚠ 오늘은 이미 출석체크를 완료했습니다.
+</div>
+
+{% endif %}
 
 <div class="alert alert-success d-flex justify-content-between align-items-center">
 
@@ -766,11 +874,41 @@ body::before{
         
     </div>
 
+    <div class="d-flex flex-column gap-2">
+
+    <div
+        id="auctionCountdown"
+        class="auction-timer">
+        ⏳ 경매 대기중
+    </div>
+
+    {% if attendance_done %}
+
+    <button
+        class="btn btn-secondary attendance-btn"
+        disabled>
+        ✅ 출석 완료
+    </button>
+
+    {% else %}
+
+    <button
+        class="btn btn-success attendance-btn"
+        type="button"
+        onclick="location.href='/attendance'">
+        📅 출석체크
+    </button>
+
+    {% endif %}
+
     <a
         href="/user_logout"
-        class="btn btn-sm btn-danger">
+        class="btn btn-danger btn-sm"
+        style="width:130px;">
         로그아웃
     </a>
+
+</div> 
 
 </div>
 
@@ -1382,6 +1520,36 @@ toggleQuantityBox();
 document
     .querySelector('input[name="quantity"]')
     .addEventListener("input", toggleQuantityBox);
+
+{% if auction_status == "running" %}
+
+async function updateCountdown() {
+
+    const timer = document.getElementById("auctionCountdown");
+    if (!timer) return;
+
+    const res = await fetch("/countdown");
+    const data = await res.json();
+
+    if (!data.running) {
+        timer.innerHTML = "⏳ 경매 대기중";
+        return;
+    }
+
+    timer.innerHTML = `
+        <div style="font-size:12px;">⏰ 경매 종료까지</div>
+        <div style="font-size:22px;font-weight:900;">
+            ${data.minutes}:${String(data.seconds).padStart(2,"0")}
+        </div>
+    `;
+}
+
+window.addEventListener("load", () => {
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+});
+
+{% endif %}
 
 </script>
 

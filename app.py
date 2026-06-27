@@ -1,7 +1,7 @@
 from urllib.parse import quote, unquote
 from fastapi import UploadFile, File
 import shutil
-from fastapi import FastAPI, Request, Form, Cookie
+from fastapi import FastAPI, Request, Form, Cookie, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import sqlite3
@@ -121,6 +121,14 @@ def init_db():
         cur.execute("""
         ALTER TABLE users
         ADD COLUMN reserved_points INTEGER DEFAULT 0
+        """)
+    except:
+        pass
+
+    try:
+        cur.execute("""
+        ALTER TABLE users
+        ADD COLUMN last_attendance TEXT
         """)
     except:
         pass
@@ -585,9 +593,54 @@ async def user_logout():
 
     return response
 
+@app.get("/attendance")
+async def attendance(
+    user: str = Cookie(None)
+):
+    if not user:
+        return RedirectResponse("/", status_code=303)
+
+    nickname = unquote(user)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    today = datetime.now(
+        ZoneInfo("Asia/Seoul")
+    ).strftime("%Y-%m-%d")
+
+    cur.execute("""
+    SELECT last_attendance
+    FROM users
+    WHERE nickname=?
+    """, (nickname,))
+
+    row = cur.fetchone()
+
+    if row and row[0] == today:
+        conn.close()
+        return RedirectResponse("/?attendance=already", status_code=303)
+
+    cur.execute("""
+    UPDATE users
+    SET
+        contribution_points = contribution_points + 1,
+        last_attendance = ?
+    WHERE nickname=?
+    """, (
+        today,
+        nickname
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse("/?attendance=success", status_code=303)
+
 @app.get("/", response_class=HTMLResponse)
 async def home(
     request: Request,
+    attendance: str = Query(None),
     user: str = Cookie(None)
 ):
 
@@ -609,6 +662,24 @@ async def home(
 
     items = cur.fetchall()
 
+    # ⭐ 경매 상태 조회
+    cur.execute("""
+    SELECT status, end_time
+    FROM auction_settings
+    WHERE id=1
+    """)
+
+    auction = cur.fetchone()
+
+    auction_status = "stopped"
+    auction_end_time = ""
+
+    if auction:
+        auction_status = auction[0]
+        auction_end_time = auction[1] or ""
+        print(auction_status)
+        print(auction_end_time)
+
     # 당첨 결과
     cur.execute("""
     SELECT
@@ -628,6 +699,7 @@ async def home(
     contribution_points = 0
     used_points = 0
     available_points = 0
+    attendance_done = False
 
     if user:
         decoded_user = unquote(user)
@@ -655,6 +727,22 @@ async def home(
 
         # 남은 사용 가능 기여도
         available_points = contribution_points - used_points
+
+        # 오늘 출석 여부 확인
+        cur.execute("""
+        SELECT last_attendance
+        FROM users
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        row = cur.fetchone()
+
+        today = datetime.now(
+            ZoneInfo("Asia/Seoul")
+        ).strftime("%Y-%m-%d")
+
+        if row and row[0] == today:
+            attendance_done = True
 
     equipment = []
     accessory = []
@@ -730,7 +818,11 @@ async def home(
             "user": unquote(user) if user else None,
             "contribution_points": contribution_points,
             "used_points": used_points,
-            "available_points": available_points
+            "available_points": available_points,
+            "attendance": attendance,
+            "attendance_done": attendance_done,
+            "auction_status": auction_status,
+            "auction_end_time": auction_end_time
         }
     )
 
@@ -1730,3 +1822,46 @@ async def restore_db(
         "/admin",
         status_code=303
     )
+
+@app.get("/countdown")
+async def countdown():
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT status, end_time
+        FROM auction_settings
+        WHERE id=1
+    """)
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    if not row or row[0] != "running":
+        return {
+            "running": False
+        }
+
+    end = datetime.strptime(
+        row[1],
+        "%Y-%m-%d %H:%M:%S"
+    ).replace(
+        tzinfo=ZoneInfo("Asia/Seoul")
+    )
+
+    now = datetime.now(
+        ZoneInfo("Asia/Seoul")
+    )
+
+    diff = int((end - now).total_seconds())
+
+    if diff < 0:
+        diff = 0
+
+    return {
+        "running": True,
+        "minutes": diff // 60,
+        "seconds": diff % 60
+    }
