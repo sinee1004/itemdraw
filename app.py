@@ -38,6 +38,9 @@ def init_db():
     conn = get_db()
     cur = conn.cursor()
 
+    # =========================
+    # 회원
+    # =========================
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +50,10 @@ def init_db():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
-    
+
+    # =========================
+    # 아이템
+    # =========================
     cur.execute("""
     CREATE TABLE IF NOT EXISTS items(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,6 +63,9 @@ def init_db():
     )
     """)
 
+    # =========================
+    # 신청
+    # =========================
     cur.execute("""
     CREATE TABLE IF NOT EXISTS entries(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,6 +76,9 @@ def init_db():
     )
     """)
 
+    # =========================
+    # 당첨자
+    # =========================
     cur.execute("""
     CREATE TABLE IF NOT EXISTS winners(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,6 +87,10 @@ def init_db():
         entry_number TEXT
     )
     """)
+
+    # =========================
+    # 경매 설정
+    # =========================
     cur.execute("""
     CREATE TABLE IF NOT EXISTS auction_settings(
         id INTEGER PRIMARY KEY,
@@ -100,38 +116,30 @@ def init_db():
         10
     )
     """)
-    # 기존 DB 사용 중일 경우 quantity 컬럼 추가
-    try:
-        cur.execute("""
-        ALTER TABLE entries
-        ADD COLUMN quantity INTEGER DEFAULT 1
-        """)
-    except:
-        pass
 
-    try:
-        cur.execute("""
-        ALTER TABLE entries
-        ADD COLUMN contribution_used INTEGER DEFAULT 0
-        """)
-    except:
-        pass
+    # =====================================
+    # 기존 DB 자동 업데이트 (Render 포함)
+    # =====================================
 
-    try:
-        cur.execute("""
-        ALTER TABLE users
-        ADD COLUMN reserved_points INTEGER DEFAULT 0
-        """)
-    except:
-        pass
+    migrations = [
 
-    try:
-        cur.execute("""
-        ALTER TABLE users
-        ADD COLUMN last_attendance TEXT
-        """)
-    except:
-        pass
+        # entries
+        ("ALTER TABLE entries ADD COLUMN quantity INTEGER DEFAULT 1"),
+
+        ("ALTER TABLE entries ADD COLUMN contribution_used INTEGER DEFAULT 0"),
+
+        # users
+        ("ALTER TABLE users ADD COLUMN reserved_points INTEGER DEFAULT 0"),
+
+        ("ALTER TABLE users ADD COLUMN last_attendance TEXT"),
+
+    ]
+
+    for sql in migrations:
+        try:
+            cur.execute(sql)
+        except:
+            pass
 
     conn.commit()
     conn.close()
