@@ -25,7 +25,7 @@ templates = Jinja2Templates(directory="templates")
 
 import os
 
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "1234")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "4470")
 
 
 
@@ -114,6 +114,16 @@ def init_db():
         'stopped',
         1,
         10
+    )
+    """)
+
+    # =========================
+    # 오늘의 행운 출석
+    # =========================
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS daily_lucky(
+        lucky_date TEXT PRIMARY KEY,
+        nickname TEXT NOT NULL
     )
     """)
 
@@ -617,6 +627,7 @@ async def attendance(
         ZoneInfo("Asia/Seoul")
     ).strftime("%Y-%m-%d")
 
+    # 오늘 이미 출석했는지 확인
     cur.execute("""
     SELECT last_attendance
     FROM users
@@ -629,13 +640,46 @@ async def attendance(
         conn.close()
         return RedirectResponse("/?attendance=already", status_code=303)
 
+    # 오늘 행운 당첨자가 있는지 확인
+    cur.execute("""
+    SELECT nickname
+    FROM daily_lucky
+    WHERE lucky_date=?
+    """, (today,))
+
+    lucky = cur.fetchone()
+
+    # 기본 지급 포인트
+    point = 1
+    attendance_result = "success"
+
+    # 아직 당첨자가 없으면 7% 확률
+    if not lucky:
+        if random.randint(1, 100) <= 7:
+
+            point = 3
+            attendance_result = "lucky"
+
+            cur.execute("""
+            INSERT INTO daily_lucky(
+                lucky_date,
+                nickname
+            )
+            VALUES(?,?)
+            """, (
+                today,
+                nickname
+            ))
+
+    # 출석 처리
     cur.execute("""
     UPDATE users
     SET
-        contribution_points = contribution_points + 1,
+        contribution_points = contribution_points + ?,
         last_attendance = ?
     WHERE nickname=?
     """, (
+        point,
         today,
         nickname
     ))
@@ -643,9 +687,10 @@ async def attendance(
     conn.commit()
     conn.close()
 
-    return RedirectResponse("/?attendance=success", status_code=303)
-
-from fastapi import Response
+    return RedirectResponse(
+        f"/?attendance={attendance_result}",
+        status_code=303
+    )
 
 @app.head("/")
 async def head_root():
@@ -665,6 +710,10 @@ async def home(
 
     conn = get_db()
     cur = conn.cursor()
+
+    today = datetime.now(
+        ZoneInfo("Asia/Seoul")
+    ).strftime("%Y-%m-%d")
 
     # 품목 목록
     cur.execute("""
@@ -713,6 +762,17 @@ async def home(
     """)
 
     rows = cur.fetchall()
+
+    # 오늘의 행운 출석 당첨자 조회
+    cur.execute("""
+    SELECT nickname
+    FROM daily_lucky
+    WHERE lucky_date=?
+    """, (today,))
+
+    row = cur.fetchone()
+
+    lucky_user = row[0] if row else None
 
     # 현재 로그인한 사용자의 기여도 조회
     contribution_points = 0
@@ -841,7 +901,8 @@ async def home(
             "attendance": attendance,
             "attendance_done": attendance_done,
             "auction_status": auction_status,
-            "auction_end_time": auction_end_time
+            "auction_end_time": auction_end_time,
+            "lucky_user": lucky_user
         }
     )
 
