@@ -925,6 +925,24 @@ async def apply(
 
     conn = get_db()
     cur = conn.cursor()
+
+    # ⭐ 경매 진행 여부 확인
+    cur.execute("""
+    SELECT status
+    FROM auction_settings
+    WHERE id=1
+    """)
+
+    auction = cur.fetchone()
+
+    if not auction or auction[0] != "running":
+        conn.close()
+        return {
+            "success": False,
+            "message": "현재는 경매 대기중입니다."
+        }
+
+
     cur.execute("""
     SELECT contribution_points
     FROM users
