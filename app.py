@@ -1214,7 +1214,7 @@ async def admin(
     conn = get_db()
     cur = conn.cursor()
 
-   cur.execute("""
+    cur.execute("""
     SELECT
         id,
         nickname,
