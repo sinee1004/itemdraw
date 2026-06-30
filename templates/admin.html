@@ -258,14 +258,14 @@ id="category">
 
 <div class="col-md-2">
 
-<label class="form-label" id="winnerLabel">
-당첨 인원
+<label class="form-label">
+아이템 수량
 </label>
 
 <input
 class="form-control"
 type="number"
-name="winner_count"
+name="item_quantity"
 value="1"
 min="1"
 required>
@@ -378,7 +378,7 @@ type="submit">
 <th>ID</th>
 <th>품목명</th>
 <th>분류</th>
-<th>당첨 수 / 보유 수량</th>
+<th>아이템 수량</th>
 <th>관리</th>
 
 </tr>
@@ -426,25 +426,7 @@ onclick="return confirm('삭제하시겠습니까?')">
 
 <script>
 
-const category = document.getElementById("category");
-const label = document.getElementById("winnerLabel");
 
-function updateLabel() {
-
-    if (category.value === "기타") {
-
-        label.innerText = "보유 수량";
-
-    } else {
-
-        label.innerText = "당첨 인원";
-
-    }
-}
-
-category.addEventListener("change", updateLabel);
-
-updateLabel();
 
 const endTime = "{{ auction_end_time }}";
 

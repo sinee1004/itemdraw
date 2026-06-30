@@ -975,7 +975,7 @@ id="itemSelect">
 <option
 value="{{ item[0] }}"
 data-category="{{ item[1] }}">
-{{ item[1] }} - {{ item[0] }} ({{ item[2] }}명)
+{{ item[1] }} - {{ item[0] }} ({{ item[3] }}개 지급 / {{ item[2] }}명 신청)
 </option>
 
 {% endfor %}
@@ -1381,8 +1381,12 @@ document.getElementById("applyForm")
             `;
 
         }
-
+        
         document.getElementById("result").innerHTML = message;
+
+         // ⭐ 신청 인원 즉시 갱신
+        updateItemCounts();
+        updateMyAppliedItems();
 
     } else {
 
@@ -1471,6 +1475,9 @@ async function cancelEntry(id) {
     alert("취소되었습니다.");
 
     loadEntries();
+
+    updateItemCounts();
+    updateMyAppliedItems();
 }
 const itemSelect =
     document.getElementById("itemSelect");
@@ -1554,6 +1561,70 @@ toggleQuantityBox();
 document
     .querySelector('input[name="quantity"]')
     .addEventListener("input", toggleQuantityBox);
+
+// ===============================
+// 신청 인원 실시간 갱신
+// ===============================
+async function updateItemCounts() {
+
+    const res = await fetch("/item_counts");
+    const items = await res.json();
+
+    for (const item of items) {
+
+        for (const option of itemSelect.options) {
+
+            if (option.value === item.item_name) {
+
+                option.text =
+                    `${item.category} - ${item.item_name} (${item.item_quantity}개 지급 / ${item.entry_count}명 신청)`;
+
+                break;
+            }
+        }
+    }
+
+    // ⭐ 신청완료 다시 표시
+    updateMyAppliedItems();
+}
+
+async function updateMyAppliedItems() {
+
+    const res = await fetch("/my_entries", {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    for (const option of itemSelect.options) {
+        option.disabled = false;
+        option.text = option.text.replace(" ✅ 신청 완료", "");
+    }
+
+    data.entries.forEach(entry => {
+
+        for (const option of itemSelect.options) {
+
+            if (option.value === entry.item_name) {
+
+                option.disabled = true;
+                option.text += " ✅ 신청 완료";
+                break;
+
+            }
+
+        }
+
+    });
+
+}
+
+// 최초 1회 실행
+updateItemCounts();
+
+// 3초마다 자동 갱신
+setInterval(updateItemCounts, 3000);
+
 
 {% if auction_status == "running" %}
 

@@ -33,19 +33,23 @@ value="{{ item[1] }}"
 
 <select name="category">
 
-<option value="장비">장비</option>
-<option value="악세사리">악세사리</option>
-<option value="엠블럼">엠블럼</option>
+<option value="장비" {% if item[2]=='장비' %}selected{% endif %}>장비</option>
+
+<option value="악세사리" {% if item[2]=='악세사리' %}selected{% endif %}>악세사리</option>
+
+<option value="엠블럼" {% if item[2]=='엠블럼' %}selected{% endif %}>엠블럼</option>
+
+<option value="기타" {% if item[2]=='기타' %}selected{% endif %}>기타</option>
 
 </select>
 
 <br><br>
 
-당첨수
+아이템 수량
 
 <input
 type="number"
-name="winner_count"
+name="item_quantity"
 value="{{ item[3] }}"
 >
 

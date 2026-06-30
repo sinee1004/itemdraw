@@ -59,7 +59,7 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         item_name TEXT,
         category TEXT,
-        winner_count INTEGER
+        item_quantity INTEGER DEFAULT 1
     )
     """)
 
@@ -143,6 +143,9 @@ def init_db():
 
         ("ALTER TABLE users ADD COLUMN last_attendance TEXT"),
 
+
+         # items
+        ("ALTER TABLE items ADD COLUMN item_quantity INTEGER DEFAULT 1"),
     ]
 
     for sql in migrations:
@@ -216,13 +219,13 @@ def run_draw():
     cur.execute("DELETE FROM winners")
 
     cur.execute("""
-    SELECT item_name, category, winner_count
+    SELECT item_name, category, item_quantity
     FROM items
     """)
 
     items = cur.fetchall()
 
-    for item_name, category, winner_count in items:
+    for item_name, category, item_quantity in items:
 
         # 기타  품목
         if category == "기타":
@@ -253,7 +256,7 @@ def run_draw():
 
             distributed = round_robin_distribution(
                 applicants,
-                winner_count
+                item_quantity
             )
 
             for nickname, qty in distributed.items():
@@ -318,7 +321,7 @@ def run_draw():
             remaining = applicants
 
             # winner_count만큼 반복
-            while len(selected) < winner_count and remaining:
+            while len(selected) < item_quantity and remaining:
 
                 highest = remaining[0][3]
 
@@ -330,7 +333,7 @@ def run_draw():
 
                 random.shuffle(same_score)
 
-                need = winner_count - len(selected)
+                need = item_quantity - len(selected)
 
                 selected.extend(same_score[:need])
 
@@ -720,11 +723,15 @@ async def home(
     SELECT
         i.item_name,
         i.category,
-        COUNT(e.id)
+        COUNT(e.id) AS entry_count,
+        i.item_quantity
     FROM items i
     LEFT JOIN entries e
         ON i.item_name = e.item_name
-    GROUP BY i.item_name, i.category
+    GROUP BY
+        i.item_name,
+        i.category,
+        i.item_quantity
     ORDER BY i.category
     """)
 
@@ -1139,7 +1146,7 @@ async def apply(
 async def add_item(
     item_name: str = Form(...),
     category: str = Form(...),
-    winner_count: int = Form(...)
+    item_quantity: int = Form(...)
 ):
 
     conn = get_db()
@@ -1148,10 +1155,10 @@ async def add_item(
     cur.execute(
         """
         INSERT INTO items
-        (item_name,category,winner_count)
-        VALUES (?,?,?)
+        (item_name, category, item_quantity)
+        VALUES (?, ?, ?)
         """,
-        (item_name, category, winner_count)
+        (item_name, category, item_quantity)
     )
 
     conn.commit()
@@ -1215,7 +1222,11 @@ async def admin(
     entries = cur.fetchall()
 
     cur.execute("""
-    SELECT id,item_name,category,winner_count
+    SELECT
+        id,
+        item_name,
+        category,
+        item_quantity
     FROM items
     """)
     items = cur.fetchall()
@@ -1439,7 +1450,11 @@ async def edit_item_page(
 
     cur.execute(
         """
-        SELECT id,item_name,category,winner_count
+        SELECT
+            id,
+            item_name,
+            category,
+            item_quantity
         FROM items
         WHERE id=?
         """,
@@ -1455,12 +1470,13 @@ async def edit_item_page(
         name="edit_item.html",
         context={"item": item}
     )
+
 @app.post("/update_item")
 async def update_item(
     item_id: int = Form(...),
     item_name: str = Form(...),
     category: str = Form(...),
-    winner_count: int = Form(...)
+    item_quantity: int = Form(...)
 ):
 
     conn = get_db()
@@ -1471,13 +1487,13 @@ async def update_item(
         UPDATE items
         SET item_name=?,
             category=?,
-            winner_count=?
+            item_quantity=?
         WHERE id=?
         """,
         (
             item_name,
             category,
-            winner_count,
+            item_quantity,
             item_id
         )
     )
@@ -1489,6 +1505,7 @@ async def update_item(
         "/admin",
         status_code=303
     )
+
 @app.get("/reset_all")
 async def reset_all(
     admin: str = Cookie(None)
@@ -1966,3 +1983,39 @@ async def countdown():
         "minutes": diff // 60,
         "seconds": diff % 60
     }
+
+@app.get("/item_counts")
+async def item_counts():
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT
+        i.item_name,
+        i.category,
+        i.item_quantity,
+        COUNT(e.id) AS entry_count
+    FROM items i
+    LEFT JOIN entries e
+        ON i.item_name = e.item_name
+    GROUP BY
+        i.item_name,
+        i.category,
+        i.item_quantity
+    ORDER BY i.category
+    """)
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return [
+        {
+            "item_name": row[0],
+            "category": row[1],
+            "item_quantity": row[2],
+            "entry_count": row[3]
+        }
+        for row in rows
+    ]
