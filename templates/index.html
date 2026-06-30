@@ -1622,8 +1622,8 @@ async function updateMyAppliedItems() {
 // 최초 1회 실행
 updateItemCounts();
 
-// 3초마다 자동 갱신
-setInterval(updateItemCounts, 3000);
+// 10초마다 자동 갱신
+setInterval(updateItemCounts, 10000);
 
 
 {% if auction_status == "running" %}

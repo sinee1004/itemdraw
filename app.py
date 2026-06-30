@@ -1214,10 +1214,15 @@ async def admin(
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("""
-    SELECT id,nickname,item_name,entry_number
+   cur.execute("""
+    SELECT
+        id,
+        nickname,
+        item_name,
+        entry_number,
+        contribution_used
     FROM entries
-    ORDER BY nickname ASC, item_name ASC
+    ORDER BY item_name ASC, contribution_used DESC, nickname ASC
     """)
     entries = cur.fetchall()
 
