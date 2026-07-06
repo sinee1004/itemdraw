@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from typing import List, Optional
 from fastapi import Response
+import json
 
 app = FastAPI()
 from fastapi.staticfiles import StaticFiles
@@ -60,6 +61,17 @@ def init_db():
         item_name TEXT,
         category TEXT,
         item_quantity INTEGER DEFAULT 1
+    )
+    """)
+
+    # =========================
+    # 아이템 마스터
+    # =========================
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS item_master(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT NOT NULL,
+        item_name TEXT NOT NULL
     )
     """)
 
@@ -134,18 +146,15 @@ def init_db():
     migrations = [
 
         # entries
-        ("ALTER TABLE entries ADD COLUMN quantity INTEGER DEFAULT 1"),
-
-        ("ALTER TABLE entries ADD COLUMN contribution_used INTEGER DEFAULT 0"),
+        "ALTER TABLE entries ADD COLUMN quantity INTEGER DEFAULT 1",
+        "ALTER TABLE entries ADD COLUMN contribution_used INTEGER DEFAULT 0",
 
         # users
-        ("ALTER TABLE users ADD COLUMN reserved_points INTEGER DEFAULT 0"),
+        "ALTER TABLE users ADD COLUMN reserved_points INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN last_attendance TEXT",
 
-        ("ALTER TABLE users ADD COLUMN last_attendance TEXT"),
-
-
-         # items
-        ("ALTER TABLE items ADD COLUMN item_quantity INTEGER DEFAULT 1"),
+        # items
+        "ALTER TABLE items ADD COLUMN item_quantity INTEGER DEFAULT 1",
     ]
 
     for sql in migrations:
@@ -1214,6 +1223,9 @@ async def admin(
     conn = get_db()
     cur = conn.cursor()
 
+    # =========================
+    # 신청자 목록
+    # =========================
     cur.execute("""
     SELECT
         id,
@@ -1222,10 +1234,15 @@ async def admin(
         entry_number,
         contribution_used
     FROM entries
-    ORDER BY item_name ASC, contribution_used DESC, nickname ASC
+    ORDER BY item_name ASC,
+             contribution_used DESC,
+             nickname ASC
     """)
     entries = cur.fetchall()
 
+    # =========================
+    # 등록 품목
+    # =========================
     cur.execute("""
     SELECT
         id,
@@ -1235,7 +1252,25 @@ async def admin(
     FROM items
     """)
     items = cur.fetchall()
-    # 회원 목록 (기여도 관리용)
+
+    # =========================
+    # 아이템 마스터
+    # =========================
+    cur.execute("""
+    SELECT
+        id,
+        category,
+        item_name
+    FROM item_master
+    ORDER BY
+        category ASC,
+        item_name ASC
+    """)
+    master_items = cur.fetchall()
+
+    # =========================
+    # 회원 목록
+    # =========================
     cur.execute("""
     SELECT
         id,
@@ -1244,15 +1279,17 @@ async def admin(
     FROM users
     ORDER BY nickname ASC
     """)
-
     users = cur.fetchall()
+
     auction_status = "종료"
     auction_end_time = ""
 
     try:
 
         cur.execute("""
-        SELECT status, end_time
+        SELECT
+            status,
+            end_time
         FROM auction_settings
         WHERE id=1
         """)
@@ -1279,8 +1316,9 @@ async def admin(
                 ).replace(tzinfo=None)
 
                 if now_dt >= end_dt:
-                    print("AUTO REVEAL START")  
-                          
+
+                    print("AUTO REVEAL START")
+
                     run_draw()
 
                     cur.execute("""
@@ -1309,7 +1347,9 @@ async def admin(
                 "auction_end_time =",
                 auction_end_time
             )
+
     except Exception as e:
+
         print("ADMIN ERROR =", e)
 
     conn.close()
@@ -1318,14 +1358,13 @@ async def admin(
         request=request,
         name="admin.html",
         context={
-             "entries": entries,
-             "items": items,
-             "users": users,          # ⭐ 이 줄 추가
-             "auction_status": auction_status,
-             "auction_end_time": auction_end_time
-         
+            "entries": entries,
+            "items": items,
+            "master_items": master_items,
+            "users": users,
+            "auction_status": auction_status,
+            "auction_end_time": auction_end_time
         }
-    
     )
 
 
@@ -2024,3 +2063,169 @@ async def item_counts():
         }
         for row in rows
     ]
+
+@app.get("/master", response_class=HTMLResponse)
+async def master(
+    request: Request,
+    admin: str = Cookie(None)
+):
+
+    if admin != "yes":
+        return RedirectResponse("/login", status_code=303)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT
+        id,
+        category,
+        item_name
+    FROM item_master
+    ORDER BY category,item_name
+    """)
+
+    master_items = cur.fetchall()
+
+    conn.close()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="master.html",
+        context={
+            "master_items": master_items
+        }
+    )
+
+@app.post("/add_master_item")
+async def add_master_item(
+
+    category: str = Form(...),
+    item_name: str = Form(...),
+
+    admin: str = Cookie(None)
+
+):
+
+    if admin != "yes":
+        return RedirectResponse("/login", status_code=303)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO item_master
+    (
+        category,
+        item_name
+    )
+    VALUES
+    (?,?)
+    """,
+    (
+        category,
+        item_name
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/master",
+        status_code=303
+    )
+
+@app.get("/delete_master_item/{item_id}")
+async def delete_master_item(
+
+    item_id: int,
+
+    admin: str = Cookie(None)
+
+):
+
+    if admin != "yes":
+        return RedirectResponse("/login", status_code=303)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM item_master WHERE id=?",
+        (item_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/master",
+        status_code=303
+    )
+
+@app.post("/add_items")
+async def add_items(
+    items: str = Form(...)
+):
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    item_list = json.loads(items)
+
+    for row in item_list:
+
+        category = row["category"]
+        item_name = row["item_name"]
+        qty = int(row["qty"])
+
+        # 장비 / 악세
+        if category in ["장비", "악세사리"]:
+
+            for i in range(1, qty + 1):
+
+                cur.execute(
+                    """
+                    INSERT INTO items
+                    (
+                        item_name,
+                        category,
+                        item_quantity
+                    )
+                    VALUES
+                    (?,?,1)
+                    """,
+                    (
+                        f"{item_name} {i}",
+                        category
+                    )
+                )
+
+        # 엠블럼 / 기타
+        else:
+
+            cur.execute(
+                """
+                INSERT INTO items
+                (
+                    item_name,
+                    category,
+                    item_quantity
+                )
+                VALUES
+                (?,?,?)
+                """,
+                (
+                    item_name,
+                    category,
+                    qty
+                )
+            )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/admin",
+        status_code=303
+    )

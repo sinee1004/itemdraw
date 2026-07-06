@@ -209,94 +209,139 @@ class="btn btn-secondary">
     </div>
 
 </div>
+
+
 <div class="card shadow mb-4">
 
-<div class="card-header bg-primary text-white">
-품목 추가
+    <div class="card-header bg-primary text-white">
+        📦 품목 추가
+    </div>
+
+    <div class="card-body">
+
+    <div class="row g-3">
+
+    <div class="col-md-3">
+
+        <label class="form-label">분류</label>
+
+        <select id="category" class="form-select">
+
+            <option value="장비">장비</option>
+            <option value="악세사리">악세사리</option>
+            <option value="엠블럼">엠블럼</option>
+            <option value="기타">기타</option>
+
+        </select>
+
+    </div>
+
+    <div class="col-md-5">
+
+        <label class="form-label">아이템</label>
+
+        <select
+            id="master_item"
+            class="form-select">
+
+            {% for item in master_items %}
+
+            <option
+                value="{{ item[2] }}"
+                data-category="{{ item[1] }}">
+
+                {{ item[2] }}
+
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+        <input
+            id="emblem_name"
+            class="form-control mt-2"
+            placeholder="엠블럼 이름 입력"
+            style="display:none;">
+
+    </div>
+
+    <div class="col-md-2">
+
+        <label class="form-label">수량</label>
+
+        <input
+            id="qty"
+            type="number"
+            class="form-control"
+            value="1"
+            min="1">
+
+    </div>
+
+    <div class="col-md-2 d-flex align-items-end">
+
+        <button
+            type="button"
+            class="btn btn-primary w-100"
+            onclick="addTempItem()">
+
+            + 추가
+
+        </button>
+
+    </div>
+
 </div>
 
-<div class="card-body">
+<hr>
 
-    
-<form action="/add_item" method="post">
+<h5>등록 예정</h5>
 
-<div class="row">
+<table class="table table-bordered">
 
-<div class="col-md-4">
+    <thead>
 
-<label class="form-label">
-품목명
-</label>
+        <tr>
 
-<input
-class="form-control"
-type="text"
-name="item_name"
-required>
+            <th>분류</th>
+            <th>아이템</th>
+            <th>수량</th>
+            <th width="80">삭제</th>
 
-</div>
+        </tr>
 
-<div class="col-md-4">
+    </thead>
 
-<label class="form-label">
-분류
-</label>
+    <tbody id="temp_list">
 
-<select
-class="form-select"
-name="category"
-id="category">
+    </tbody>
 
-<option value="장비">장비</option>
-<option value="악세사리">악세사리</option>
-<option value="엠블럼">엠블럼</option>
-<option value="기타">기타</option>
-
-</select>
-
-</div>
-
-<div class="col-md-2">
-
-<label class="form-label">
-아이템 수량
-</label>
-
-<input
-class="form-control"
-type="number"
-name="item_quantity"
-value="1"
-min="1"
-required>
-
-</div>
-
-<div class="col-md-2 d-flex align-items-end">
+</table>
 
 <button
-class="btn btn-primary w-100"
-type="submit">
+    type="button"
+    class="btn btn-success"
+    onclick="saveItems()">
 
-추가
+    전체 등록
 
-</button>
+</button>  
 
-</div>
-
-</div>
-
-</form>
+    </div>
 
 </div>
-
-</div>
-
 
 <a
     href="/member_admin"
     class="btn btn-danger mb-3">
     👥 회원 관리
+</a>
+
+<a
+    href="/master"
+    class="btn btn-primary mb-3">
+    📦 아이템 마스터
 </a>
 
 <div class="card shadow mb-4">
@@ -486,6 +531,160 @@ else {
     document.getElementById(
         "countdown"
     ).innerText = "-";
+
+}
+
+</script>
+
+<script>
+
+const category = document.getElementById("category");
+const master = document.getElementById("master_item");
+const emblem = document.getElementById("emblem_name");
+
+function refreshMaster(){
+
+    const current = category.value;
+
+    for(const option of master.options){
+
+        option.hidden = option.dataset.category !== current;
+
+    }
+
+    for(const option of master.options){
+
+        if(!option.hidden){
+
+            master.value = option.value;
+            break;
+
+        }
+
+    }
+
+    if(current === "엠블럼"){
+
+        master.style.display = "none";
+        emblem.style.display = "block";
+
+    }else{
+
+        master.style.display = "block";
+        emblem.style.display = "none";
+
+    }
+
+}
+
+category.addEventListener("change", refreshMaster);
+
+refreshMaster();
+
+function addTempItem(){
+
+    const c = category.value;
+
+    let itemName = "";
+
+    if(c === "엠블럼"){
+
+        itemName = emblem.value.trim();
+
+    }else{
+
+        itemName = master.value;
+
+    }
+
+    if(itemName === ""){
+
+        alert("아이템명을 입력하세요.");
+        return;
+
+    }
+
+    const qty = document.getElementById("qty").value;
+
+    const tbody = document.getElementById("temp_list");
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+        <td>${c}</td>
+        <td>${itemName}</td>
+        <td>${qty}</td>
+        <td>
+            <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                onclick="removeTemp(this)">
+                삭제
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+
+    emblem.value = "";
+
+}
+
+function removeTemp(btn){
+
+    btn.closest("tr").remove();
+
+}
+
+function saveItems(){
+
+    const rows=document.querySelectorAll("#temp_list tr");
+
+    if(rows.length==0){
+
+        alert("등록할 품목이 없습니다.");
+
+        return;
+
+    }
+
+    const data=[];
+
+    rows.forEach(row=>{
+
+        const td=row.querySelectorAll("td");
+
+        data.push({
+
+            category:td[0].innerText,
+
+            item_name:td[1].innerText,
+
+            qty:td[2].innerText
+
+        });
+
+    });
+
+    const form=document.createElement("form");
+
+    form.method="post";
+
+    form.action="/add_items";
+
+    const input=document.createElement("input");
+
+    input.type="hidden";
+
+    input.name="items";
+
+    input.value=JSON.stringify(data);
+
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+
+    form.submit();
 
 }
 
