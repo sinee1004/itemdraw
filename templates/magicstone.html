@@ -13,6 +13,13 @@
 </div>
 <div class="card-body">
 
+{% if request.query_params.get("message") == "max25" %}
+<div class="alert alert-danger">
+    ⚠️ 매직스톤은 최대 <strong>25개</strong>까지 등록할 수 있습니다.
+    기존 매직스톤을 삭제한 후 다시 등록해주세요.
+</div>
+{% endif %}
+
 <div class="mb-3">
     <a href="/" class="btn btn-secondary">
         ← 메인으로 돌아가기
@@ -381,6 +388,19 @@ document
     .getElementById("calculate_btn")
     .href="/magicstone/calculate/"+this.value;
 
+});
+
+document.getElementById("calculate_btn").addEventListener("click", function (e) {
+
+    if (this.dataset.running === "1") {
+        e.preventDefault();
+        return;
+    }
+
+    this.dataset.running = "1";
+    this.classList.remove("btn-success");
+    this.classList.add("btn-secondary", "disabled");
+    this.innerHTML = "⏳ 계산 중...";
 });
 </script>
 

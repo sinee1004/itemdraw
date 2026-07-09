@@ -96,6 +96,19 @@ async def add_stone(
 
     conn = get_db()
 
+    # 최대 40개 제한
+    count = conn.execute(
+        "SELECT COUNT(*) FROM magic_user_stones WHERE nickname = ?",
+        (nickname,)
+    ).fetchone()[0]
+
+    if count >= 25:
+        conn.close()
+        return RedirectResponse(
+            "/magicstone?message=max25",
+            status_code=303
+        )
+
     conn.execute("""
 
         INSERT INTO magic_user_stones(
