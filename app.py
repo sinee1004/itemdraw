@@ -1,37 +1,47 @@
 from urllib.parse import quote, unquote
 from fastapi import UploadFile, File
 import shutil
-from fastapi import FastAPI, Request, Form, Cookie, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, Form, Cookie, Query, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+
 import sqlite3
 import random
 import hashlib
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
+import json
+import os
+
+from database import get_db
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from typing import List, Optional
-from fastapi import Response
-import json
 
+# 라우터
+from routers import magicstone
+
+# FastAPI 생성
 app = FastAPI()
-from fastapi.staticfiles import StaticFiles
 
+# 라우터 등록
+app.include_router(magicstone.router)
+
+# 정적 파일
 app.mount(
     "/static",
     StaticFiles(directory="static"),
     name="static"
 )
+
+# 템플릿
 templates = Jinja2Templates(directory="templates")
 
-import os
-
+# 관리자 비밀번호
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "4470")
 
 
 
-def get_db():
-    return sqlite3.connect("itemdraw.db")
+
 
 
 def init_db():
@@ -138,6 +148,55 @@ def init_db():
         nickname TEXT NOT NULL
     )
     """)
+
+    # =========================
+    # 매직스톤
+    # =========================
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS magic_user_stones(
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                
+        nickname TEXT NOT NULL,
+
+        name TEXT NOT NULL,
+        shape TEXT NOT NULL,
+        grade TEXT NOT NULL,
+
+        stat1 TEXT NOT NULL,
+        value1 REAL NOT NULL,
+
+        stat2 TEXT,
+        value2 REAL,
+
+        potential TEXT NOT NULL,
+        potential_value REAL NOT NULL,
+
+        owned INTEGER DEFAULT 1
+
+    )
+    """)
+
+    # =========================
+    # 매직스톤 기본 능력치
+    # =========================
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS magic_user_settings(
+
+        nickname TEXT PRIMARY KEY,
+
+        순격 REAL DEFAULT 0,
+        강습 REAL DEFAULT 0,
+        추상 REAL DEFAULT 0,
+
+        근성 REAL DEFAULT 0,
+        방감 REAL DEFAULT 0,
+        요새 REAL DEFAULT 0
+
+    )
+    """)
+
+    
 
     # =====================================
     # 기존 DB 자동 업데이트 (Render 포함)

@@ -803,6 +803,38 @@ body::before{
     border-radius:8px;
 }
 
+.magicstone-btn{
+
+    background:
+        linear-gradient(
+            180deg,
+            #8b5cf6,
+            #5b21b6
+        ) !important;
+
+    border:2px solid gold !important;
+
+    color:white !important;
+
+    font-weight:800;
+
+    border-radius:8px;
+
+    transition:.2s;
+}
+
+.magicstone-btn:hover{
+
+    transform:translateY(-2px);
+
+    background:
+        linear-gradient(
+            180deg,
+            #9f67ff,
+            #6d28d9
+        ) !important;
+}
+
 </style>
 
 
@@ -902,6 +934,13 @@ body::before{
         class="auction-timer">
         ⏳ 경매 대기중
     </div>
+
+    <a
+        href="/magicstone"
+        class="btn btn-primary magicstone-btn"
+        style="width:130px;">
+        🔮 매직스톤 계산기
+    </a>
 
     {% if attendance_done %}
 
