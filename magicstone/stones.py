@@ -156,10 +156,10 @@ async def add_stone(
     )).fetchall()
 
     # 이미 2개 이상 보유한 경우
-    if len(rows) >= 2:
+    if len(rows) >= 1:
 
         # 기존보다 낮거나 같으면 등록 불가
-        if potential_value <= rows[1]["potential_value"]:
+        if potential_value <= rows[0]["potential_value"]:
 
             conn.close()
 
@@ -169,12 +169,12 @@ async def add_stone(
             )
 
         # 2번째를 제외한 나머지는 모두 삭제
-        for row in rows[1:]:
+        
 
-            conn.execute(
-                "DELETE FROM magic_user_stones WHERE id=?",
-                (row["id"],)
-            )
+        conn.execute(
+            "DELETE FROM magic_user_stones WHERE id=?",
+            (row["id"],)
+        )
 
     # 현재 보유 개수 확인
     count = conn.execute(
@@ -312,9 +312,9 @@ async def cleanup_stones(user: str = Cookie(None)):
 
     for stones in groups.values():
 
-        if len(stones) > 2:
+        if len(stones) > 1:
 
-            for stone in stones[2:]:
+            for stone in stones[1:]:
 
                 delete_ids.append(stone["id"])
 
