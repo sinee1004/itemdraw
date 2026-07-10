@@ -1,4 +1,4 @@
-from itertools import combinations
+
 
 from magicstone.engine import Engine
 
@@ -9,52 +9,7 @@ class Optimizer:
 
         self.stones = stones
 
-    def is_valid(self, team):
-
-        names = set()
-
-        shape_count = {
-
-            "원": 0,
-            "세모": 0,
-            "다이아": 0,
-            "육각": 0,
-            "별": 0,
-            "달": 0
-
-        }
-
-        for stone in team:
-
-            # 동일 이름 착용 불가
-            if stone.name in names:
-                return False
-
-            names.add(stone.name)
-
-            shape_count[stone.shape] += 1
-
-        # 모양별 최대 착용 개수
-
-        if shape_count["원"] > 3:
-            return False
-
-        if shape_count["세모"] > 3:
-            return False
-
-        if shape_count["다이아"] > 3:
-            return False
-
-        if shape_count["육각"] > 3:
-            return False
-
-        if shape_count["별"] > 3:
-            return False
-
-        if shape_count["달"] > 3:
-            return False
-
-        return True
+    
 
     def find_best(self, target, setting=None):
 
@@ -71,10 +26,24 @@ class Optimizer:
             if self.is_target_related(stone, target)
         ]
 
-        
+        best_stones = {}
 
-        
+        for stone in self.stones:
 
+            key = (
+                stone.name,
+                stone.potential
+            )
+
+            if (
+                key not in best_stones
+                or stone.potential_value > best_stones[key].potential_value
+            ):
+                best_stones[key] = stone
+
+        self.stones = list(best_stones.values())
+
+                
         self.search(
 
             index=0,

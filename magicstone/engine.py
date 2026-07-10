@@ -1,18 +1,11 @@
 from collections import defaultdict
 from copy import deepcopy
-from pathlib import Path
-
-DEBUG = True
-DEBUG_FILE = Path("engine_debug.txt")
 
 
-def debug(msg="", enabled=False):
 
-    if not enabled:
-        return
 
-    with DEBUG_FILE.open("a", encoding="utf-8") as f:
-        f.write(str(msg) + "\n")
+
+
 
 class MagicStone:
 
@@ -67,7 +60,7 @@ class Engine:
             self.grade_count[stone.grade] += 1
             self.potential_count[stone.potential] += 1
 
-    def apply_resonance(self, debug_mode=False):
+    def apply_resonance(self):
 
         resonance = []
 
@@ -90,12 +83,7 @@ class Engine:
                     1 + value / 100
                 )
 
-                debug(
-                    f"공명 적용 : {stone.name} | "
-                    f"{stone.potential} -> "
-                    f"{stone.potential_value:.2f}",
-                    debug
-                )
+                
 
     def apply_mastery(self, stone):
 
@@ -148,18 +136,17 @@ class Engine:
 
             else:
 
-                print(f"[경고] '{stat}' 항목을 result에서 찾지 못했습니다.")
+                continue
 
         return final
 
-    def calculate(self, debug_mode=False):
+    def calculate(self):
 
-        if debug_mode:
-            DEBUG_FILE.write_text("", encoding="utf-8")
+        
 
         self.count()
 
-        self.apply_resonance(debug_mode)
+        self.apply_resonance()
 
         result = defaultdict(float)
 
@@ -181,8 +168,8 @@ class Engine:
 
             stat = self.apply_base_potential(
                 stone,
-                stat,
-                debug_mode
+                stat
+                
             )
             
 
@@ -219,32 +206,11 @@ class Engine:
                 )
 
         result = self.apply_amplify(result)
-
-        
-    
-        debug("", debug_mode)
-        debug("===================================", debug_mode)
-        debug("선택된 매직스톤", debug_mode)
-        debug("===================================", debug_mode)
-
-        for stone in self.stones:
-            debug(
-                f"{stone.name} | "
-                f"{stone.potential} {stone.potential_value:.2f}",
-                debug_mode
-            )
-
-        debug("", debug_mode)
-        debug("===================================", debug_mode)
-        debug("최종 능력치", debug_mode)
-        debug("===================================", debug_mode)
-
-        for k, v in result.items():
-            debug(f"{k} = {v:.2f}", debug_mode)
-
+ 
+           
         return dict(result)
     
-    def apply_base_potential(self, stone, stat, debug_mode=False):
+    def apply_base_potential(self, stone, stat):
 
         category = stone.potential
         before = stat.copy()
@@ -335,17 +301,7 @@ class Engine:
                 )
         
 
-        if before != stat:
+        
 
-            debug("", debug_mode)
-            debug(f"[{stone.name}]", debug_mode)
-            debug(f"잠재력 : {category}", debug_mode)
-
-            debug("적용 전", debug_mode)
-            for k, v in before.items():
-                debug(f"    {k} = {v:.2f}", debug_mode)
-
-            debug("적용 후", debug_mode)
-            for k, v in stat.items():
-                debug(f"    {k} = {v:.2f}", debug_mode)        
+                    
         return stat

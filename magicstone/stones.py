@@ -19,6 +19,30 @@ router = APIRouter(prefix="/magicstone")
 
 templates = Jinja2Templates(directory="templates")
 
+ALLOWED_POTENTIALS = {
+
+    "순격 숙달",
+    "강습 숙달",
+    "추상 숙달",
+    "근성 숙달",
+    "방감 숙달",
+    "요새 숙달",
+
+    "순격 증폭",
+    "강습 증폭",
+    "추상 증폭",
+    "근성 증폭",
+    "방감 증폭",
+    "요새 증폭",
+
+    "매직스톤단련",
+    "붉은빛집중",
+    "만물조형",
+    "인장동조",
+    "잠재력공명",
+    "원근잠재력",
+
+}
 
 @router.get("/")
 async def index(
@@ -96,19 +120,79 @@ async def add_stone(
 
     conn = get_db()
 
-    # 최대 40개 제한
-    count = conn.execute(
-        "SELECT COUNT(*) FROM magic_user_stones WHERE nickname = ?",
-        (nickname,)
-    ).fetchone()[0]
+    # 계산기에 사용하는 잠재력인지 확인
+    if potential not in ALLOWED_POTENTIALS:
 
-    if count >= 25:
         conn.close()
+
         return RedirectResponse(
-            "/magicstone?message=max25",
+            "/magicstone?message=invalid_potential",
             status_code=303
         )
 
+    # 같은 모양 + 같은 등급 + 같은 잠재력 조회
+    rows = conn.execute("""
+
+        SELECT id, potential_value
+
+        FROM magic_user_stones
+
+        WHERE nickname=?
+        AND name=?
+        AND shape=?
+        AND grade=?
+        AND potential=?
+
+        ORDER BY potential_value DESC
+
+    """, (
+
+        nickname,
+        name,
+        shape,
+        grade,
+        potential
+
+    )).fetchall()
+
+    # 이미 2개 이상 보유한 경우
+    if len(rows) >= 2:
+
+        # 기존보다 낮거나 같으면 등록 불가
+        if potential_value <= rows[1]["potential_value"]:
+
+            conn.close()
+
+            return RedirectResponse(
+                "/magicstone?message=lower_value",
+                status_code=303
+            )
+
+        # 2번째를 제외한 나머지는 모두 삭제
+        for row in rows[1:]:
+
+            conn.execute(
+                "DELETE FROM magic_user_stones WHERE id=?",
+                (row["id"],)
+            )
+
+    # 현재 보유 개수 확인
+    count = conn.execute(
+        "SELECT COUNT(*) FROM magic_user_stones WHERE nickname=?",
+        (nickname,)
+    ).fetchone()[0]
+
+    # 교체가 아닌 일반 등록만 36개 제한
+    if len(rows) < 2 and count >= 36:
+
+        conn.close()
+
+        return RedirectResponse(
+            "/magicstone?message=max36",
+            status_code=303
+        )
+
+    # 새 매직스톤 저장
     conn.execute("""
 
         INSERT INTO magic_user_stones(
@@ -179,7 +263,75 @@ async def delete_stone(stone_id: int):
 
     return RedirectResponse("/magicstone", status_code=303)
 
+@router.get("/stone/cleanup")
+async def cleanup_stones(user: str = Cookie(None)):
 
+    if not user:
+        return RedirectResponse("/", status_code=303)
+
+    nickname = unquote(user)
+
+    conn = get_db()
+
+    rows = conn.execute("""
+
+        SELECT id,
+               name,
+               shape,
+               grade,
+               potential,
+               potential_value
+
+        FROM magic_user_stones
+
+        WHERE nickname=?
+
+        ORDER BY
+            name,            
+            shape,
+            grade,
+            potential,
+            potential_value DESC
+
+    """, (nickname,)).fetchall()
+
+    groups = {}
+
+    delete_ids = []
+
+    for row in rows:
+
+        key = (
+            row["name"],
+            row["shape"],
+            row["grade"],
+            row["potential"]
+        )
+
+        groups.setdefault(key, []).append(row)
+
+    for stones in groups.values():
+
+        if len(stones) > 2:
+
+            for stone in stones[2:]:
+
+                delete_ids.append(stone["id"])
+
+    for stone_id in delete_ids:
+
+        conn.execute(
+            "DELETE FROM magic_user_stones WHERE id=?",
+            (stone_id,)
+        )
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/magicstone?message=cleanup",
+        status_code=303
+    )
 
 
 @router.get("/api/stone")

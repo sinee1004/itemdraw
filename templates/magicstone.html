@@ -13,10 +13,31 @@
 </div>
 <div class="card-body">
 
-{% if request.query_params.get("message") == "max25" %}
+{% set message = request.query_params.get("message") %}
+
+{% if message == "max36" %}
 <div class="alert alert-danger">
-    ⚠️ 매직스톤은 최대 <strong>25개</strong>까지 등록할 수 있습니다.
-    기존 매직스톤을 삭제한 후 다시 등록해주세요.
+    ⚠️ 매직스톤은 최대 <strong>36개</strong>까지 등록할 수 있습니다.
+</div>
+{% endif %}
+
+{% if message == "invalid_potential" %}
+<div class="alert alert-warning">
+    ⚠️ 선택한 잠재력은 계산기에 사용되지 않습니다.
+    (마스터리, 마스터리공명, 스킬증가 등은 개인 보관해주세요.)
+</div>
+{% endif %}
+
+{% if message == "lower_value" %}
+<div class="alert alert-warning">
+    ⚠️ 이미 같은 모양 · 같은 등급 · 같은 잠재력의 더 높은 수치 매직스톤 2개를 보유하고 있습니다.
+</div>
+{% endif %}
+
+{% if message == "cleanup" %}
+<div class="alert alert-success">
+    ✅ 매직스톤 자동정리가 완료되었습니다.<br>
+    같은 모양 · 같은 등급 · 같은 잠재력은 최고 수치 2개만 남기고 모두 정리되었습니다.
 </div>
 {% endif %}
 
@@ -224,7 +245,21 @@
 
 <hr>
 
-<h4>보유 매직스톤</h4>
+<div class="d-flex justify-content-between align-items-center mb-3">
+
+    <h4 class="mb-0">보유 매직스톤</h4>
+
+    <a
+        href="/magicstone/stone/cleanup"
+        class="btn btn-warning"
+        onclick="return confirm('같은 모양 + 같은 등급 + 같은 잠재력의 매직스톤은 최고 수치 2개만 남기고 모두 삭제합니다.\n\n계속하시겠습니까?');">
+
+        🧹 매직스톤 자동정리
+
+    </a>
+
+</div>
+
 
 <div class="table-responsive">
 
