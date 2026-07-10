@@ -182,13 +182,13 @@ async def add_stone(
         (nickname,)
     ).fetchone()[0]
 
-    # 교체가 아닌 일반 등록만 36개 제한
-    if len(rows) < 2 and count >= 36:
+    # 교체가 아닌 일반 등록만 100개 제한
+    if len(rows) < 2 and count >= 100:
 
         conn.close()
 
         return RedirectResponse(
-            "/magicstone?message=max36",
+            "/magicstone?message=max100",
             status_code=303
         )
 
