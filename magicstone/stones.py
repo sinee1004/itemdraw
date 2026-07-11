@@ -68,7 +68,25 @@ async def index(
         SELECT *
         FROM magic_user_stones
         WHERE nickname=?
-        ORDER BY id DESC
+        ORDER BY
+            CASE shape
+                WHEN '원' THEN 1
+                WHEN '세모' THEN 2
+                WHEN '다이아' THEN 3
+                WHEN '육각' THEN 4
+                WHEN '별' THEN 5
+                WHEN '달' THEN 6
+                ELSE 99
+            END,
+            name,
+            CASE grade
+                WHEN '신화' THEN 1
+                WHEN '전설' THEN 2
+                WHEN '에픽' THEN 3
+                ELSE 99
+            END,
+            potential,
+            potential_value DESC
     """, (nickname,)).fetchall()
 
     setting = conn.execute("""
