@@ -3032,3 +3032,109 @@ def mypage(request: Request, user: str = Cookie(None)):
             "logs": logs
         }
     )
+
+@app.post("/refund_ticket")
+async def refund_ticket(
+    ticket_type: str = Form(...),
+    user: str = Cookie(None)
+):
+
+    if not user:
+        return JSONResponse({
+            "success": False,
+            "message": "로그인이 필요합니다."
+        })
+
+    nickname = unquote(user)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT
+        contribution_points,
+        equipment_ticket,
+        emblem_ticket
+    FROM users
+    WHERE nickname=?
+    """, (nickname,))
+
+    row = cur.fetchone()
+
+    if not row:
+
+        conn.close()
+
+        return JSONResponse({
+            "success": False,
+            "message": "회원 정보를 찾을 수 없습니다."
+        })
+
+    if ticket_type == "equipment":
+
+        if row["equipment_ticket"] <= 0:
+
+            conn.close()
+
+            return JSONResponse({
+                "success": False,
+                "message": "장비/악세 강화입찰권이 없습니다."
+            })
+
+        cur.execute("""
+        UPDATE users
+        SET
+            contribution_points = contribution_points + 20,
+            equipment_ticket = equipment_ticket - 1
+        WHERE nickname=?
+        """, (nickname,))
+
+        add_contribution_log(
+            cur,
+            nickname,
+            20,
+            "장비/악세 강화입찰권 환불"
+        )
+
+    elif ticket_type == "emblem":
+
+        if row["emblem_ticket"] <= 0:
+
+            conn.close()
+
+            return JSONResponse({
+                "success": False,
+                "message": "엠블럼 강화입찰권이 없습니다."
+            })
+
+        cur.execute("""
+        UPDATE users
+        SET
+            contribution_points = contribution_points + 10,
+            emblem_ticket = emblem_ticket - 1
+        WHERE nickname=?
+        """, (nickname,))
+
+        add_contribution_log(
+            cur,
+            nickname,
+            10,
+            "엠블럼 강화입찰권 환불"
+        )
+
+    else:
+
+        conn.close()
+
+        return JSONResponse({
+            "success": False,
+            "message": "잘못된 요청입니다."
+        })
+
+    conn.commit()
+    conn.close()
+
+    return JSONResponse({
+        "success": True,
+        "message": "강화입찰권이 환불되었습니다."
+    })

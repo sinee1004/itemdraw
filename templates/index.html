@@ -982,14 +982,14 @@ body::before{
 
     
 
-    <!-- 강화입찰권 -->
+    <!-- 강화입찰권 구매 -->
     <button
         type="button"
         class="btn btn-warning"
         style="width:130px;font-weight:700;"
         onclick="toggleTicketBox()">
 
-        🎫 강화입찰권
+        🎫 강화입찰권 구매
 
     </button>
 
@@ -1018,7 +1018,49 @@ body::before{
             class="btn btn-success btn-sm w-100"
             onclick="exchangeTicket()">
 
-            교환
+            구매
+
+        </button>
+
+    </div>
+
+    <!-- 강화입찰권 환불 -->
+    <button
+        type="button"
+        class="btn btn-secondary mt-2"
+        style="width:130px;font-weight:700;"
+        onclick="toggleRefundBox()">
+
+        ♻️ 강화입찰권 환불
+
+    </button>
+
+    <div
+        id="refundBox"
+        class="mt-2"
+        style="display:none;width:130px;">
+
+        <select
+            id="refundTicketType"
+            class="form-select mb-2"
+            style="font-size:14px;">
+
+            <option value="equipment">
+                장비 / 악세
+            </option>
+
+            <option value="emblem">
+                엠블럼
+            </option>
+
+        </select>
+
+        <button
+            type="button"
+            class="btn btn-danger btn-sm w-100"
+            onclick="refundTicket()">
+
+            환불
 
         </button>
 
@@ -1848,6 +1890,55 @@ async function exchangeTicket(){
 
     const response = await fetch(
         "/exchange_ticket",
+        {
+            method:"POST",
+            body:form
+        }
+    );
+
+    const result = await response.json();
+
+    alert(result.message);
+
+    if(result.success){
+
+        location.reload();
+
+    }
+
+}
+
+function toggleRefundBox(){
+
+    const box =
+        document.getElementById("refundBox");
+
+    if(box.style.display==="none"){
+
+        box.style.display="block";
+
+    }else{
+
+        box.style.display="none";
+
+    }
+
+}
+
+async function refundTicket(){
+
+    const ticketType =
+        document.getElementById("refundTicketType").value;
+
+    const form = new FormData();
+
+    form.append(
+        "ticket_type",
+        ticketType
+    );
+
+    const response = await fetch(
+        "/refund_ticket",
         {
             method:"POST",
             body:form

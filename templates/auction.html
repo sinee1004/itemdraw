@@ -184,11 +184,7 @@ onclick="return confirm('품목, 신청자, 당첨결과를 모두 삭제하시�
 
         </select>
 
-        <input
-            id="emblem_name"
-            class="form-control mt-2"
-            placeholder="엠블럼 이름 입력"
-            style="display:none;">
+        
 
     </div>
 
@@ -395,7 +391,7 @@ else {
 
 const category = document.getElementById("category");
 const master = document.getElementById("master_item");
-const emblem = document.getElementById("emblem_name");
+
 
 function refreshMaster(){
 
@@ -418,17 +414,7 @@ function refreshMaster(){
 
     }
 
-    if(current === "엠블럼"){
-
-        master.style.display = "none";
-        emblem.style.display = "block";
-
-    }else{
-
-        master.style.display = "block";
-        emblem.style.display = "none";
-
-    }
+    master.style.display = "block";
 
 }
 
@@ -439,18 +425,7 @@ refreshMaster();
 function addTempItem(){
 
     const c = category.value;
-
-    let itemName = "";
-
-    if(c === "엠블럼"){
-
-        itemName = emblem.value.trim();
-
-    }else{
-
-        itemName = master.value;
-
-    }
+    const itemName = master.value;
 
     if(itemName === ""){
 
@@ -481,7 +456,7 @@ function addTempItem(){
 
     tbody.appendChild(tr);
 
-    emblem.value = "";
+    
 
 }
 
