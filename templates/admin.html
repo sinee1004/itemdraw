@@ -258,11 +258,7 @@ class="btn btn-secondary">
 
         </select>
 
-        <input
-            id="emblem_name"
-            class="form-control mt-2"
-            placeholder="엠블럼 이름 입력"
-            style="display:none;">
+        
 
     </div>
 
@@ -540,40 +536,28 @@ else {
 
 const category = document.getElementById("category");
 const master = document.getElementById("master_item");
-const emblem = document.getElementById("emblem_name");
+
 
 function refreshMaster(){
 
     const current = category.value;
 
-    for(const option of master.options){
+    master.innerHTML = "";
 
-        option.hidden = option.dataset.category !== current;
+    {% for item in master_items %}
 
-    }
+    if("{{ item[1] }}" === current){
 
-    for(const option of master.options){
+        const option = document.createElement("option");
 
-        if(!option.hidden){
+        option.value = "{{ item[2] }}";
+        option.textContent = "{{ item[2] }}";
 
-            master.value = option.value;
-            break;
-
-        }
+        master.appendChild(option);
 
     }
 
-    if(current === "엠블럼"){
-
-        master.style.display = "none";
-        emblem.style.display = "block";
-
-    }else{
-
-        master.style.display = "block";
-        emblem.style.display = "none";
-
-    }
+    {% endfor %}
 
 }
 
@@ -584,18 +568,7 @@ refreshMaster();
 function addTempItem(){
 
     const c = category.value;
-
-    let itemName = "";
-
-    if(c === "엠블럼"){
-
-        itemName = emblem.value.trim();
-
-    }else{
-
-        itemName = master.value;
-
-    }
+    const itemName = master.value;
 
     if(itemName === ""){
 
@@ -625,8 +598,6 @@ function addTempItem(){
     `;
 
     tbody.appendChild(tr);
-
-    emblem.value = "";
 
 }
 
