@@ -17,7 +17,7 @@ import hashlib
 import json
 import os
 
-from database import get_db, init_db
+from database import get_db
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from typing import List, Optional
@@ -27,7 +27,7 @@ from routers import magicstone
 
 # FastAPI 생성
 app = FastAPI()
-init_db()
+
 
 # 라우터 등록
 app.include_router(magicstone.router)
@@ -161,6 +161,19 @@ def init_db():
     CREATE TABLE IF NOT EXISTS daily_lucky(
         lucky_date TEXT PRIMARY KEY,
         nickname TEXT NOT NULL
+    )
+    """)
+
+    # =========================
+    # 기여도 변동 로그
+    # =========================
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS contribution_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nickname TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
