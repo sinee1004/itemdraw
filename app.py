@@ -2,7 +2,12 @@ from urllib.parse import quote, unquote
 from fastapi import UploadFile, File
 import shutil
 from fastapi import FastAPI, Request, Form, Cookie, Query, Response
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
+from fastapi.responses import (
+    HTMLResponse,
+    RedirectResponse,
+    FileResponse,
+    JSONResponse
+)
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
@@ -12,7 +17,7 @@ import hashlib
 import json
 import os
 
-from database import get_db
+from database import get_db, init_db
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from typing import List, Optional
@@ -22,6 +27,7 @@ from routers import magicstone
 
 # FastAPI 생성
 app = FastAPI()
+init_db()
 
 # 라우터 등록
 app.include_router(magicstone.router)
@@ -57,7 +63,14 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nickname TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
+
+        role TEXT DEFAULT 'member',
+
         contribution_points INTEGER DEFAULT 0,
+
+        equipment_ticket INTEGER DEFAULT 0,
+        emblem_ticket INTEGER DEFAULT 0,
+
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
     """)
@@ -94,7 +107,9 @@ def init_db():
         nickname TEXT,
         item_name TEXT,
         entry_number TEXT,
-        quantity INTEGER DEFAULT 1
+        quantity INTEGER DEFAULT 1,
+        contribution_used INTEGER DEFAULT 0,
+        ticket_type TEXT DEFAULT ''
     )
     """)
 
@@ -156,7 +171,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS magic_user_stones(
 
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                
+
         nickname TEXT NOT NULL,
 
         name TEXT NOT NULL,
@@ -196,21 +211,23 @@ def init_db():
     )
     """)
 
-    
-
     # =====================================
     # 기존 DB 자동 업데이트 (Render 포함)
     # =====================================
 
     migrations = [
 
+        # users
+        "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'member'",
+        "ALTER TABLE users ADD COLUMN reserved_points INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN last_attendance TEXT",
+        "ALTER TABLE users ADD COLUMN equipment_ticket INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN emblem_ticket INTEGER DEFAULT 0",
+
         # entries
         "ALTER TABLE entries ADD COLUMN quantity INTEGER DEFAULT 1",
         "ALTER TABLE entries ADD COLUMN contribution_used INTEGER DEFAULT 0",
-
-        # users
-        "ALTER TABLE users ADD COLUMN reserved_points INTEGER DEFAULT 0",
-        "ALTER TABLE users ADD COLUMN last_attendance TEXT",
+        "ALTER TABLE entries ADD COLUMN ticket_type TEXT DEFAULT ''",
 
         # items
         "ALTER TABLE items ADD COLUMN item_quantity INTEGER DEFAULT 1",
@@ -354,10 +371,10 @@ def run_draw():
                     nickname,
                     item_name,
                     entry_number,
-                    contribution_used
+                    contribution_used,
+                    ticket_type
                 FROM entries
                 WHERE item_name=?
-                ORDER BY contribution_used DESC
                 """,
                 (item_name,)
             )
@@ -377,6 +394,73 @@ def run_draw():
 
                 continue
 
+            # ==========================
+            # 강화입찰권 신청자 우선
+            # ==========================
+
+            ticket_users = []
+
+            point_users = []
+
+            for a in applicants:
+
+                if a[4] != "":
+                    ticket_users.append(a)
+
+                else:
+                    point_users.append(a)
+
+            # 강화입찰권 사용자가 있으면
+            if ticket_users:
+
+                random.shuffle(ticket_users)
+
+                selected = ticket_users[:item_quantity]
+
+                for winner in selected:
+
+                    cur.execute(
+                        """
+                        INSERT INTO winners
+                        (nickname,item_name,entry_number)
+                        VALUES (?,?,?)
+                        """,
+                        (
+                            winner[0],
+                            winner[1],
+                            winner[2]
+                        )
+                    )
+
+                    # 당첨자만 티켓 차감
+                    if winner[4] == "equipment":
+
+                        cur.execute("""
+                        UPDATE users
+                        SET equipment_ticket =
+                            MAX(0, equipment_ticket-1)
+                        WHERE nickname=?
+                        """,
+                        (winner[0],))
+
+                    elif winner[4] == "emblem":
+
+                        cur.execute("""
+                        UPDATE users
+                        SET emblem_ticket =
+                            MAX(0, emblem_ticket-1)
+                        WHERE nickname=?
+                        """,
+                        (winner[0],))
+
+                continue
+
+            # ==========================
+            # 기존 기여도 추첨
+            # ==========================
+
+            applicants = point_users
+
             # 기여도 높은 순으로 정렬
             applicants = sorted(
                 applicants,
@@ -388,12 +472,10 @@ def run_draw():
 
             remaining = applicants
 
-            # winner_count만큼 반복
             while len(selected) < item_quantity and remaining:
 
                 highest = remaining[0][3]
 
-                # 현재 최고 기여도 그룹
                 same_score = [
                     a for a in remaining
                     if a[3] == highest
@@ -405,7 +487,6 @@ def run_draw():
 
                 selected.extend(same_score[:need])
 
-                # 뽑힌 사람 제거
                 selected_names = {
                     (x[0], x[2]) for x in same_score[:need]
                 }
@@ -444,10 +525,34 @@ def run_draw():
                     )
                 )
 
+                if winner[3] > 0:
+                    add_contribution_log(
+                        cur,
+                        winner[0],
+                        -winner[3],
+                        f"{winner[1]} 당첨"
+                    )        
+
+    # 신청내역 삭제
     cur.execute("DELETE FROM entries")
 
     conn.commit()
-    conn.close()
+    conn.close()                
+
+def add_contribution_log(cur, nickname, amount, reason):
+
+    cur.execute(
+        """
+        INSERT INTO contribution_logs
+        (nickname, amount, reason)
+        VALUES (?,?,?)
+        """,
+        (
+            nickname,
+            amount,
+            reason
+        )
+    )
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
@@ -742,6 +847,21 @@ async def attendance(
                 nickname
             ))
 
+    if point == 3:
+        add_contribution_log(
+            cur,
+            nickname,
+            3,
+            "행운 출석"
+        )
+    else:
+        add_contribution_log(
+            cur,
+            nickname,
+            1,
+            "출석체크"
+        )       
+
     # 출석 처리
     cur.execute("""
     UPDATE users
@@ -849,18 +969,27 @@ async def home(
 
     lucky_user = row[0] if row else None
 
-    # 현재 로그인한 사용자의 기여도 조회
+    # 현재 로그인한 사용자의 정보 조회
     contribution_points = 0
     used_points = 0
     available_points = 0
     attendance_done = False
+    role = "member"
+
+    equipment_ticket = 0
+    emblem_ticket = 0
 
     if user:
+
         decoded_user = unquote(user)
 
-        # 총 기여도
+        # 총 기여도 + 권한 + 강화입찰권
         cur.execute("""
-        SELECT contribution_points
+        SELECT
+            contribution_points,
+            role,
+            equipment_ticket,
+            emblem_ticket
         FROM users
         WHERE nickname=?
         """, (decoded_user,))
@@ -869,6 +998,9 @@ async def home(
 
         if point_row:
             contribution_points = point_row[0]
+            role = point_row[1] or "member"
+            equipment_ticket = point_row[2]
+            emblem_ticket = point_row[3]
 
         # 입찰에 사용 중인 기여도
         cur.execute("""
@@ -882,7 +1014,7 @@ async def home(
         # 남은 사용 가능 기여도
         available_points = contribution_points - used_points
 
-        # 오늘 출석 여부 확인
+        # 오늘 출석 여부
         cur.execute("""
         SELECT last_attendance
         FROM users
@@ -890,10 +1022,6 @@ async def home(
         """, (decoded_user,))
 
         row = cur.fetchone()
-
-        today = datetime.now(
-            ZoneInfo("Asia/Seoul")
-        ).strftime("%Y-%m-%d")
 
         if row and row[0] == today:
             attendance_done = True
@@ -973,11 +1101,14 @@ async def home(
             "contribution_points": contribution_points,
             "used_points": used_points,
             "available_points": available_points,
+            "equipment_ticket": equipment_ticket,
+            "emblem_ticket": emblem_ticket,
             "attendance": attendance,
             "attendance_done": attendance_done,
             "auction_status": auction_status,
             "auction_end_time": auction_end_time,
-            "lucky_user": lucky_user
+            "lucky_user": lucky_user,
+            "role": role
         }
     )
 
@@ -986,7 +1117,11 @@ async def home(
 async def apply(
     item_name: str = Form(...),
     quantity: int = Form(1),
-    contribution_used: int = Form(0),   # ⭐ 다시 추가
+
+    bid_type: str = Form("point"),   # point / ticket
+
+    contribution_used: int = Form(0),
+
     user: str = Cookie(None)
 ):
     if not user:
@@ -1019,13 +1154,19 @@ async def apply(
 
 
     cur.execute("""
-    SELECT contribution_points
+    SELECT
+        contribution_points,
+        equipment_ticket,
+        emblem_ticket
     FROM users
     WHERE nickname=?
     """, (nickname,))
 
     row = cur.fetchone()
+
     current_points = row[0] if row else 0
+    equipment_ticket = row[1] if row else 0
+    emblem_ticket = row[2] if row else 0
 
     # 이미 입찰에 사용한 포인트 합계
     cur.execute("""
@@ -1038,8 +1179,85 @@ async def apply(
 
     available_points = current_points - used_points
 
-    # ⭐ 카테고리별 자동 기여도 계산
+        # ⭐ 카테고리별 자동 기여도 계산
     category = get_category(item_name)
+    ticket_type = ""
+
+    if bid_type == "ticket":
+
+        if category == "장비" or category == "악세사리":
+
+            if equipment_ticket <= 0:
+
+                conn.close()
+
+                return {
+                    "success": False,
+                    "message": "장비/악세 강화입찰권이 없습니다."
+                }
+
+            ticket_type = "equipment"
+            contribution_used = 0
+
+        elif category == "엠블럼":
+
+            if emblem_ticket <= 0:
+
+                conn.close()
+
+                return {
+                    "success": False,
+                    "message": "엠블럼 강화입찰권이 없습니다."
+                }
+
+            ticket_type = "emblem"
+            contribution_used = 0
+
+        else:
+
+            conn.close()
+
+            return {
+                "success": False,
+                "message": "기타 품목은 강화입찰권을 사용할 수 없습니다."
+            }
+
+        # =========================
+        # 강화입찰권 중복 사용 방지
+        # =========================
+        cur.execute("""
+        SELECT COUNT(*)
+        FROM entries
+        WHERE nickname=?
+        AND ticket_type=?
+        """,
+        (
+            nickname,
+            ticket_type
+        ))
+
+        already_ticket = cur.fetchone()[0]
+
+        if already_ticket > 0:
+
+            conn.close()
+
+            if ticket_type == "equipment":
+
+                return {
+                    "success": False,
+                    "message": "장비/악세 강화입찰권은 한 번에 1개만 사용할 수 있습니다."
+                }
+
+            return {
+                "success": False,
+                "message": "엠블럼 강화입찰권은 한 번에 1개만 사용할 수 있습니다."
+            }
+
+    else:
+
+        ticket_type = ""
+
     if category == "기타":
         contribution_used = 0
 
@@ -1078,7 +1296,7 @@ async def apply(
             "success": False,
             "message": "엠블럼은 최대 5점까지 입찰 가능합니다."
         }
-    
+
     if category != "기타" and contribution_used > available_points:
         conn.close()
         return {
@@ -1174,18 +1392,20 @@ async def apply(
             item_name,
             entry_number,
             quantity,
-            contribution_used
+            contribution_used,
+            ticket_type
         )
-        VALUES (?,?,?,?,?)
+        VALUES (?,?,?,?,?,?)
         """,
         (
             nickname,
             item_name,
             "",
             quantity,
-            contribution_used
+            contribution_used,
+            ticket_type
         )
-)
+    )
 
     entry_id = cur.lastrowid
 
@@ -1241,14 +1461,34 @@ async def add_item(
 @app.get("/delete_item/{item_id}")
 async def delete_item(
     item_id: int,
-    admin: str = Cookie(None)
+    admin: str = Cookie(None),
+    user: str = Cookie(None)
 ):
 
+    # 관리자 또는 경매관리자만 가능
     if admin != "yes":
-        return RedirectResponse(
-            "/login",
-            status_code=303
-        )
+
+        if not user:
+            return RedirectResponse("/", status_code=303)
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        decoded_user = unquote(user)
+
+        cur.execute("""
+        SELECT role
+        FROM users
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        row = cur.fetchone()
+
+        if not row or row[0] != "auction":
+            conn.close()
+            return RedirectResponse("/", status_code=303)
+
+        conn.close()
 
     conn = get_db()
     cur = conn.cursor()
@@ -1261,8 +1501,14 @@ async def delete_item(
     conn.commit()
     conn.close()
 
+    if admin == "yes":
+        return RedirectResponse(
+            "/admin",
+            status_code=303
+        )
+
     return RedirectResponse(
-        "/admin",
+        "/auction",
         status_code=303
     )
 
@@ -1427,6 +1673,109 @@ async def admin(
     )
 
 
+@app.get("/auction", response_class=HTMLResponse)
+async def auction(
+    request: Request,
+    user: str = Cookie(None)
+):
+
+    if not user:
+        return RedirectResponse(
+            "/user_login",
+            status_code=303
+        )
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    decoded_user = unquote(user)
+
+    # 권한 확인
+    cur.execute("""
+    SELECT role
+    FROM users
+    WHERE nickname=?
+    """, (decoded_user,))
+
+    row = cur.fetchone()
+
+    if not row or row[0] != "auction":
+        conn.close()
+        return RedirectResponse(
+            "/",
+            status_code=303
+        )
+
+    # =========================
+    # 등록 품목
+    # =========================
+    cur.execute("""
+    SELECT
+        id,
+        item_name,
+        category,
+        item_quantity
+    FROM items
+    """)
+    items = cur.fetchall()
+
+    # =========================
+    # 아이템 마스터
+    # =========================
+    cur.execute("""
+    SELECT
+        id,
+        category,
+        item_name
+    FROM item_master
+    ORDER BY
+        category ASC,
+        item_name ASC
+    """)
+    master_items = cur.fetchall()
+
+    auction_status = "종료"
+    auction_end_time = ""
+
+    try:
+
+        cur.execute("""
+        SELECT
+            status,
+            end_time
+        FROM auction_settings
+        WHERE id=1
+        """)
+
+        auction = cur.fetchone()
+
+        if auction:
+
+            status = auction[0]
+            auction_end_time = auction[1] or ""
+
+            if status == "running":
+                auction_status = "진행중"
+
+            elif status == "revealed":
+                auction_status = "개찰완료"
+
+    except:
+        pass
+
+    conn.close()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="auction.html",
+        context={
+            "items": items,
+            "master_items": master_items,
+            "auction_status": auction_status,
+            "auction_end_time": auction_end_time
+        }
+    )
+
 
 @app.get("/draw")
 async def draw(
@@ -1538,15 +1887,39 @@ async def results(request: Request):
             "etc_items": etc_items
         }
     )
+
 @app.get("/edit_item/{item_id}", response_class=HTMLResponse)
 async def edit_item_page(
     request: Request,
     item_id: int,
-    admin: str = Cookie(None)
+    admin: str = Cookie(None),
+    user: str = Cookie(None)
 ):
 
+    # 관리자 또는 경매관리자만 가능
     if admin != "yes":
-        return RedirectResponse("/login", status_code=303)
+
+        if not user:
+            return RedirectResponse("/", status_code=303)
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        decoded_user = unquote(user)
+
+        cur.execute("""
+        SELECT role
+        FROM users
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        row = cur.fetchone()
+
+        if not row or row[0] != "auction":
+            conn.close()
+            return RedirectResponse("/", status_code=303)
+
+        conn.close()
 
     conn = get_db()
     cur = conn.cursor()
@@ -1571,7 +1944,9 @@ async def edit_item_page(
     return templates.TemplateResponse(
         request=request,
         name="edit_item.html",
-        context={"item": item}
+        context={
+            "item": item
+        }
     )
 
 @app.post("/update_item")
@@ -1579,8 +1954,34 @@ async def update_item(
     item_id: int = Form(...),
     item_name: str = Form(...),
     category: str = Form(...),
-    item_quantity: int = Form(...)
+    item_quantity: int = Form(...),
+    admin: str = Cookie(None),
+    user: str = Cookie(None)
 ):
+
+    # 관리자 또는 경매관리자만 가능
+    if admin != "yes":
+
+        if not user:
+            return RedirectResponse("/", status_code=303)
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        decoded_user = unquote(user)
+
+        cur.execute("""
+        SELECT role
+        FROM users
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        row = cur.fetchone()
+
+        conn.close()
+
+        if not row or row[0] != "auction":
+            return RedirectResponse("/", status_code=303)
 
     conn = get_db()
     cur = conn.cursor()
@@ -1588,7 +1989,8 @@ async def update_item(
     cur.execute(
         """
         UPDATE items
-        SET item_name=?,
+        SET
+            item_name=?,
             category=?,
             item_quantity=?
         WHERE id=?
@@ -1604,21 +2006,46 @@ async def update_item(
     conn.commit()
     conn.close()
 
+    if admin == "yes":
+        return RedirectResponse(
+            "/admin",
+            status_code=303
+        )
+
     return RedirectResponse(
-        "/admin",
+        "/auction",
         status_code=303
     )
 
 @app.get("/reset_all")
 async def reset_all(
-    admin: str = Cookie(None)
+    admin: str = Cookie(None),
+    user: str = Cookie(None)
 ):
 
+    # 관리자 또는 경매관리자만 가능
     if admin != "yes":
-        return RedirectResponse(
-            "/login",
-            status_code=303
-        )
+
+        if not user:
+            return RedirectResponse("/", status_code=303)
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        decoded_user = unquote(user)
+
+        cur.execute("""
+        SELECT role
+        FROM users
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        row = cur.fetchone()
+
+        conn.close()
+
+        if not row or row[0] != "auction":
+            return RedirectResponse("/", status_code=303)
 
     conn = get_db()
     cur = conn.cursor()
@@ -1635,10 +2062,11 @@ async def reset_all(
     conn.commit()
     conn.close()
 
-    return RedirectResponse(
-        "/admin",
-        status_code=303
-    )
+    if admin == "yes":
+        return RedirectResponse("/admin", status_code=303)
+
+    return RedirectResponse("/auction", status_code=303)
+
 @app.post("/my_entries")
 async def my_entries(
     user: str = Cookie(None)
@@ -1685,7 +2113,8 @@ async def my_entries(
 @app.post("/give_contribution")
 async def give_contribution(
     user_ids: Optional[List[int]] = Form(None),
-    points: int = Form(...),
+    points: int = Form(0),
+    action: str = Form("give"),
     admin: str = Cookie(None)
 ):
     if admin != "yes":
@@ -1704,15 +2133,75 @@ async def give_contribution(
     conn = get_db()
     cur = conn.cursor()
 
-    for user_id in user_ids:
-        cur.execute(
+    # ==========================
+    # 기여도 지급
+    # ==========================
+    if action == "give":
+
+        for user_id in user_ids:
+
+            # 닉네임 조회
+            cur.execute(
+                """
+                SELECT nickname
+                FROM users
+                WHERE id=?
+                """,
+                (user_id,)
+            )
+
+            row = cur.fetchone()
+
+            if not row:
+                continue
+
+            nickname = row[0]
+
+            # 기여도 지급
+            cur.execute(
+                """
+                UPDATE users
+                SET contribution_points =
+                    MAX(0, contribution_points + ?)
+                WHERE id = ?
+                """,
+                (points, user_id)
+            )
+
+            # 로그 저장
+            add_contribution_log(
+                cur,
+                nickname,
+                points,
+                "관리자 지급"
+            )
+
+    # ==========================
+    # 경매관리자 지정
+    # ==========================
+    elif action == "auction":
+
+        cur.executemany(
             """
             UPDATE users
-            SET contribution_points =
-                MAX(0, contribution_points + ?)
-            WHERE id = ?
+            SET role='auction'
+            WHERE id=?
             """,
-            (points, user_id)
+            [(uid,) for uid in user_ids]
+        )
+
+    # ==========================
+    # 일반회원 변경
+    # ==========================
+    elif action == "member":
+
+        cur.executemany(
+            """
+            UPDATE users
+            SET role='member'
+            WHERE id=?
+            """,
+            [(uid,) for uid in user_ids]
         )
 
     conn.commit()
@@ -1771,8 +2260,35 @@ async def delete_entry(
 @app.post("/start_auction")
 async def start_auction(
     reveal_minutes: int = Form(...),
-    auto_reveal: int = Form(...)
+    auto_reveal: int = Form(...),
+    admin: str = Cookie(None),
+    user: str = Cookie(None)
 ):
+
+    # 관리자 또는 경매관리자만 가능
+    if admin != "yes":
+
+        if not user:
+            return RedirectResponse("/", status_code=303)
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        decoded_user = unquote(user)
+
+        cur.execute("""
+        SELECT role
+        FROM users
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        row = cur.fetchone()
+
+        conn.close()
+
+        if not row or row[0] != "auction":
+            return RedirectResponse("/", status_code=303)
+
     conn = get_db()
     cur = conn.cursor()
 
@@ -1781,13 +2297,17 @@ async def start_auction(
     )
 
     if auto_reveal == 1:
+
         end_time = start_time + timedelta(
             minutes=reveal_minutes
         )
+
         end_time_str = end_time.strftime(
             "%Y-%m-%d %H:%M:%S"
         )
+
     else:
+
         end_time_str = None
 
     cur.execute(
@@ -1813,10 +2333,11 @@ async def start_auction(
     conn.commit()
     conn.close()
 
-    return RedirectResponse(
-        "/admin",
-        status_code=303
-    )
+    # 어디서 실행했는지에 따라 돌아갈 페이지
+    if admin == "yes":
+        return RedirectResponse("/admin", status_code=303)
+
+    return RedirectResponse("/auction", status_code=303)
 
 
 @app.post("/reveal_auction")
@@ -1885,7 +2406,8 @@ async def member_admin(
         id,
         nickname,
         contribution_points,
-        created_at
+        created_at,
+        role
     FROM users
     ORDER BY nickname ASC
     """)
@@ -2001,10 +2523,31 @@ async def weekly_contribution(
     conn = get_db()
     cur = conn.cursor()
 
+    # 전체 회원 조회
     cur.execute("""
-        UPDATE users
-        SET contribution_points = contribution_points + 10
+        SELECT nickname
+        FROM users
     """)
+
+    users = cur.fetchall()
+
+    # 회원별 지급 + 로그 저장
+    for row in users:
+
+        nickname = row["nickname"]
+
+        cur.execute("""
+            UPDATE users
+            SET contribution_points = contribution_points + 10
+            WHERE nickname=?
+        """, (nickname,))
+
+        add_contribution_log(
+            cur,
+            nickname,
+            10,
+            "주간 기여도 지급"
+        )
 
     conn.commit()
     conn.close()
@@ -2224,8 +2767,34 @@ async def delete_master_item(
 
 @app.post("/add_items")
 async def add_items(
-    items: str = Form(...)
+    items: str = Form(...),
+    admin: str = Cookie(None),
+    user: str = Cookie(None)
 ):
+
+    # 관리자 또는 경매관리자만 가능
+    if admin != "yes":
+
+        if not user:
+            return RedirectResponse("/", status_code=303)
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        decoded_user = unquote(user)
+
+        cur.execute("""
+        SELECT role
+        FROM users
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        row = cur.fetchone()
+
+        conn.close()
+
+        if not row or row[0] != "auction":
+            return RedirectResponse("/", status_code=303)
 
     conn = get_db()
     cur = conn.cursor()
@@ -2284,7 +2853,169 @@ async def add_items(
     conn.commit()
     conn.close()
 
-    return RedirectResponse(
-        "/admin",
-        status_code=303
+    if admin == "yes":
+        return RedirectResponse("/admin", status_code=303)
+
+    return RedirectResponse("/auction", status_code=303)
+
+@app.post("/exchange_ticket")
+async def exchange_ticket(
+    ticket_type: str = Form(...),
+    user: str = Cookie(None)
+):
+
+    if not user:
+        return JSONResponse({
+            "success": False,
+            "message": "로그인이 필요합니다."
+        })
+
+    nickname = unquote(user)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT
+        contribution_points,
+        equipment_ticket,
+        emblem_ticket
+    FROM users
+    WHERE nickname=?
+    """, (nickname,))
+
+    row = cur.fetchone()
+
+    if not row:
+        conn.close()
+        return JSONResponse({
+            "success": False,
+            "message": "회원 정보를 찾을 수 없습니다."
+        })
+
+    points = row[0]
+
+    if ticket_type == "equipment":
+
+        if points < 20:
+            conn.close()
+            return JSONResponse({
+                "success": False,
+                "message": "기여도 20점이 필요합니다."
+            })
+
+        cur.execute("""
+        UPDATE users
+        SET
+            contribution_points = contribution_points - 20,
+            equipment_ticket = equipment_ticket + 1
+        WHERE nickname=?
+        """, (nickname,))
+
+        # 로그 저장
+        add_contribution_log(
+            cur,
+            nickname,
+            -20,
+            "장비/악세 강화입찰권 교환"
+        )
+
+    elif ticket_type == "emblem":
+
+        if points < 10:
+            conn.close()
+            return JSONResponse({
+                "success": False,
+                "message": "기여도 10점이 필요합니다."
+            })
+
+        cur.execute("""
+        UPDATE users
+        SET
+            contribution_points = contribution_points - 10,
+            emblem_ticket = emblem_ticket + 1
+        WHERE nickname=?
+        """, (nickname,))
+
+        # 로그 저장
+        add_contribution_log(
+            cur,
+            nickname,
+            -10,
+            "엠블럼 강화입찰권 교환"
+        )
+
+    else:
+
+        conn.close()
+
+        return JSONResponse({
+            "success": False,
+            "message": "잘못된 요청입니다."
+        })
+
+    conn.commit()
+    conn.close()
+
+    return JSONResponse({
+        "success": True,
+        "message": "강화입찰권으로 교환되었습니다."
+    })
+
+@app.get("/mypage", response_class=HTMLResponse)
+def mypage(request: Request, user: str = Cookie(None)):
+
+    if not user:
+        return RedirectResponse("/user_login", status_code=303)
+
+    nickname = unquote(user)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT contribution_points
+        FROM users
+        WHERE nickname=?
+    """, (nickname,))
+
+    member = cursor.fetchone()
+
+    if not member:
+        conn.close()
+        return RedirectResponse("/", status_code=303)
+
+    cursor.execute("""
+        SELECT COALESCE(SUM(contribution_used),0)
+        FROM entries
+        WHERE nickname=?
+    """, (nickname,))
+
+    used = cursor.fetchone()[0]
+
+    cursor.execute("""
+        SELECT amount, reason, created_at
+        FROM contribution_logs
+        WHERE nickname=?
+        ORDER BY id DESC
+        LIMIT 30
+    """, (nickname,))
+
+    logs = cursor.fetchall()
+
+    conn.close()
+
+    total = member["contribution_points"]
+    available = total - used
+
+    return templates.TemplateResponse(
+        request=request,
+        name="mypage.html",
+        context={
+            "user": nickname,
+            "total": total,
+            "used": used,
+            "available": available,
+            "logs": logs
+        }
     )

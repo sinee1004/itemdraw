@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>내 페이지</title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-4" style="max-width:700px;">
+
+    <div class="card shadow">
+
+        <div class="card-header text-center">
+            <h3>👤 내 페이지</h3>
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-bordered">
+
+                <tr>
+                    <th width="35%">닉네임</th>
+                    <td>{{ user }}</td>
+                </tr>
+
+                <tr>
+                    <th>현재 기여도</th>
+                    <td>{{ total }}</td>
+                </tr>
+
+                <tr>
+                    <th>사용 가능 기여도</th>
+                    <td>{{ available }}</td>
+                </tr>
+
+                <tr>
+                    <th>사용중 기여도</th>
+                    <td>{{ used }}</td>
+                </tr>
+
+            </table>
+
+            <hr>
+
+            <h5>최근 기여도 변동내역</h5>
+
+            <table class="table table-striped">
+
+                <thead>
+
+                <tr>
+
+                    <th>날짜</th>
+                    <th>내용</th>
+                    <th class="text-end">변동</th>
+
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for log in logs %}
+
+                <tr>
+
+                    <td>{{ log.created_at[:16] }}</td>
+
+                    <td>{{ log.reason }}</td>
+
+                    <td class="text-end">
+
+                    {% if log.amount > 0 %}
+                        <span class="text-success">+{{ log.amount }}</span>
+                    {% else %}
+                        <span class="text-danger">{{ log.amount }}</span>
+                    {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+                {% if not logs %}
+
+                <tr>
+
+                    <td colspan="3" class="text-center">
+
+                        기여도 변동내역이 없습니다.
+
+                    </td>
+
+                </tr>
+
+                {% endif %}
+
+                </tbody>
+
+            </table>
+
+            <div class="text-center mt-3">
+
+                <a href="/" class="btn btn-primary">
+                    메인으로
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>경매관리</title>
+
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
+
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-4">
+
+<h1>⚙ 경매관리</h1>
+
+
+
+<div class="d-flex gap-2 mb-4">
+
+
+<a href="/results"
+class="btn btn-success">
+🏆 결과 보기 </a>
+
+<a href="/reset_all"
+class="btn btn-danger"
+onclick="return confirm('품목, 신청자, 당첨결과를 모두 삭제하시겠습니까?')">
+🗑 전체 초기화 </a>
+
+<a href="/" class="btn btn-secondary">
+← 뒤로가기
+</a>
+
+</div>
+
+
+
+<div class="card shadow mb-4">
+
+    <div class="card-header bg-danger text-white">
+        🏆 경매 관리
+    </div>
+
+    <div class="card-body">
+
+     <div class="alert alert-info mb-3">
+
+        현재 상태 :
+        <strong>{{ auction_status }}</strong>
+
+        <br><br>
+
+        남은 시간 :
+        <strong id="countdown">계산중...</strong>
+
+    </div>
+
+        <form action="/start_auction" method="post">
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <label class="form-label">
+                        자동 개찰 시간
+                    </label>
+
+                    <select
+                        class="form-select"
+                        name="reveal_minutes">
+
+                        <option value="1">1분</option>
+                        <option value="5">5분</option>
+                        <option value="10" selected>10분</option>
+                        <option value="15">15분</option>
+                        <option value="20">20분</option>
+                        <option value="30">30분</option>
+                        <option value="60">60분</option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label class="form-label">
+                        개찰 방식
+                    </label>
+
+                    <select
+                        class="form-select"
+                        name="auto_reveal">
+
+                        <option value="1" selected>
+                            자동 개찰
+                        </option>
+
+                        <option value="0">
+                            수동 개찰
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-4 d-flex align-items-end">
+
+                    <button
+                        class="btn btn-success w-100"
+                        type="submit">
+
+                        ▶ 경매 시작
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+        
+
+    </div>
+
+</div>
+
+
+<div class="card shadow mb-4">
+
+    <div class="card-header bg-primary text-white">
+        📦 품목 추가
+    </div>
+
+    <div class="card-body">
+
+    <div class="row g-3">
+
+    <div class="col-md-3">
+
+        <label class="form-label">분류</label>
+
+        <select id="category" class="form-select">
+
+            <option value="장비">장비</option>
+            <option value="악세사리">악세사리</option>
+            <option value="엠블럼">엠블럼</option>
+            <option value="기타">기타</option>
+
+        </select>
+
+    </div>
+
+    <div class="col-md-5">
+
+        <label class="form-label">아이템</label>
+
+        <select
+            id="master_item"
+            class="form-select">
+
+            {% for item in master_items %}
+
+            <option
+                value="{{ item[2] }}"
+                data-category="{{ item[1] }}">
+
+                {{ item[2] }}
+
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+        <input
+            id="emblem_name"
+            class="form-control mt-2"
+            placeholder="엠블럼 이름 입력"
+            style="display:none;">
+
+    </div>
+
+    <div class="col-md-2">
+
+        <label class="form-label">수량</label>
+
+        <input
+            id="qty"
+            type="number"
+            class="form-control"
+            value="1"
+            min="1">
+
+    </div>
+
+    <div class="col-md-2 d-flex align-items-end">
+
+        <button
+            type="button"
+            class="btn btn-primary w-100"
+            onclick="addTempItem()">
+
+            + 추가
+
+        </button>
+
+    </div>
+
+</div>
+
+<hr>
+
+<h5>등록 예정</h5>
+
+<table class="table table-bordered">
+
+    <thead>
+
+        <tr>
+
+            <th>분류</th>
+            <th>아이템</th>
+            <th>수량</th>
+            <th width="80">삭제</th>
+
+        </tr>
+
+    </thead>
+
+    <tbody id="temp_list">
+
+    </tbody>
+
+</table>
+
+<button
+    type="button"
+    class="btn btn-success"
+    onclick="saveItems()">
+
+    전체 등록
+
+</button>  
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+<div class="card shadow">
+
+<div class="card-header bg-dark text-white">
+등록 품목
+</div>
+
+<div class="card-body">
+
+<table class="table table-striped table-hover">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+<th>품목명</th>
+<th>분류</th>
+<th>아이템 수량</th>
+<th>관리</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for item in items %}
+
+<tr>
+
+<td>{{ item[0] }}</td>
+<td>{{ item[1] }}</td>
+<td>{{ item[2] }}</td>
+<td>{{ item[3] }}</td>
+
+<td>
+
+<a href="/edit_item/{{ item[0] }}"
+class="btn btn-warning btn-sm">
+수정 </a>
+
+<a
+href="/delete_item/{{ item[0] }}"
+class="btn btn-danger btn-sm"
+onclick="return confirm('삭제하시겠습니까?')">
+삭제 </a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+
+
+const endTime = "{{ auction_end_time }}";
+
+console.log("endTime =", endTime);
+
+if (
+    endTime &&
+    "{{ auction_status }}" === "진행중"
+) {
+
+    function updateCountdown() {
+
+        const end = new Date(
+            endTime.replace(" ", "T")
+        );
+
+        const now = new Date();
+
+        const diff = end - now;
+
+        if (diff <= 0) {
+
+            location.reload();
+
+            return;
+        }
+
+        const minutes = Math.floor(
+            diff / 1000 / 60
+        );
+
+        const seconds = Math.floor(
+            (diff / 1000) % 60
+        );
+
+        document.getElementById(
+            "countdown"
+        ).innerText =
+            String(minutes).padStart(2, "0")
+            + ":" +
+            String(seconds).padStart(2, "0");
+    }
+
+    updateCountdown();
+
+    setInterval(
+        updateCountdown,
+        1000
+    );
+
+}
+else {
+
+    document.getElementById(
+        "countdown"
+    ).innerText = "-";
+
+}
+
+</script>
+
+<script>
+
+const category = document.getElementById("category");
+const master = document.getElementById("master_item");
+const emblem = document.getElementById("emblem_name");
+
+function refreshMaster(){
+
+    const current = category.value;
+
+    for(const option of master.options){
+
+        option.hidden = option.dataset.category !== current;
+
+    }
+
+    for(const option of master.options){
+
+        if(!option.hidden){
+
+            master.value = option.value;
+            break;
+
+        }
+
+    }
+
+    if(current === "엠블럼"){
+
+        master.style.display = "none";
+        emblem.style.display = "block";
+
+    }else{
+
+        master.style.display = "block";
+        emblem.style.display = "none";
+
+    }
+
+}
+
+category.addEventListener("change", refreshMaster);
+
+refreshMaster();
+
+function addTempItem(){
+
+    const c = category.value;
+
+    let itemName = "";
+
+    if(c === "엠블럼"){
+
+        itemName = emblem.value.trim();
+
+    }else{
+
+        itemName = master.value;
+
+    }
+
+    if(itemName === ""){
+
+        alert("아이템명을 입력하세요.");
+        return;
+
+    }
+
+    const qty = document.getElementById("qty").value;
+
+    const tbody = document.getElementById("temp_list");
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+        <td>${c}</td>
+        <td>${itemName}</td>
+        <td>${qty}</td>
+        <td>
+            <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                onclick="removeTemp(this)">
+                삭제
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+
+    emblem.value = "";
+
+}
+
+function removeTemp(btn){
+
+    btn.closest("tr").remove();
+
+}
+
+function saveItems(){
+
+    const rows=document.querySelectorAll("#temp_list tr");
+
+    if(rows.length==0){
+
+        alert("등록할 품목이 없습니다.");
+
+        return;
+
+    }
+
+    const data=[];
+
+    rows.forEach(row=>{
+
+        const td=row.querySelectorAll("td");
+
+        data.push({
+
+            category:td[0].innerText,
+
+            item_name:td[1].innerText,
+
+            qty:td[2].innerText
+
+        });
+
+    });
+
+    const form=document.createElement("form");
+
+    form.method="post";
+
+    form.action="/add_items";
+
+    const input=document.createElement("input");
+
+    input.type="hidden";
+
+    input.name="items";
+
+    input.value=JSON.stringify(data);
+
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+
+    form.submit();
+
+}
+
+</script>
+
+</body>
+
+</html>

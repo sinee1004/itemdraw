@@ -714,7 +714,7 @@ body::before{
     width:130px !important;
     height:42px !important;
 
-    font-size:15px !important;
+    font-size:10px !important;
     font-weight:700 !important;
 
     padding:6px 10px !important;
@@ -728,22 +728,7 @@ body::before{
     justify-content:center;
 }
 
-.attendance-btn{
 
-    width:130px !important;
-    height:34px !important;
-
-    font-size:14px !important;
-    font-weight:700 !important;
-
-    padding:4px 8px !important;
-
-    border-radius:8px !important;
-
-    display:flex !important;
-    justify-content:center;
-    align-items:center;
-}
 
 .auction-timer{
 
@@ -816,11 +801,31 @@ body::before{
 
     color:white !important;
 
-    font-weight:800;
+    font-weight:700 !important;
 
-    border-radius:8px;
+    font-size:15px !important;
 
-    transition:.2s;
+    border-radius:8px !important;
+
+    width:130px !important;
+
+    height:60px !important;
+
+    display:flex !important;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:6px !important;
+
+    line-height:1.2 !important;
+
+    white-space:normal;
+
+    text-align:center;
 }
 
 .magicstone-btn:hover{
@@ -908,6 +913,44 @@ body::before{
 
 {% endif %}
 
+<div class="d-flex gap-2 mb-3">
+
+    <a
+        href="/magicstone"
+        class="btn btn-primary magicstone-btn flex-fill">
+        🔮 매직스톤 계산기
+    </a>
+
+    <div
+        id="auctionCountdown"
+        class="auction-timer flex-fill">
+        ⏳ 경매 대기중
+    </div>
+
+    {% if attendance_done %}
+
+    <button
+        class="btn btn-secondary flex-fill"
+        disabled>
+        ✅ 출석 완료
+    </button>
+
+    {% else %}
+
+    <button
+        class="btn btn-success flex-fill"
+        type="button"
+        style="font-size:16px;"
+        onclick="location.href='/attendance'">
+        📅 출석체크
+    </button>
+
+    {% endif %}
+
+    
+
+</div>
+
 <div class="alert alert-success d-flex justify-content-between align-items-center">
 
     <div>
@@ -924,42 +967,77 @@ body::before{
 
         ✅ 남은 사용 가능 :
         <strong>{{ available_points }}점</strong>
+        <br>
+
+        🎫 장비/악세 강화입찰권 :
+        <strong>{{ equipment_ticket }}장</strong>
+        <br>
+
+        🎫 엠블럼 강화입찰권 :
+        <strong>{{ emblem_ticket }}장</strong>
         
     </div>
 
     <div class="d-flex flex-column gap-2">
 
+    
+
+    <!-- 강화입찰권 -->
+    <button
+        type="button"
+        class="btn btn-warning"
+        style="width:130px;font-weight:700;"
+        onclick="toggleTicketBox()">
+
+        🎫 강화입찰권
+
+    </button>
+
     <div
-        id="auctionCountdown"
-        class="auction-timer">
-        ⏳ 경매 대기중
+        id="ticketBox"
+        class="mt-2"
+        style="display:none;width:130px;">
+
+        <select
+            id="ticketType"
+            class="form-select mb-2"
+            style="font-size:14px;">
+
+            <option value="equipment">
+                장비 / 악세
+            </option>
+
+            <option value="emblem">
+                엠블럼
+            </option>
+
+        </select>
+
+        <button
+            type="button"
+            class="btn btn-success btn-sm w-100"
+            onclick="exchangeTicket()">
+
+            교환
+
+        </button>
+
     </div>
 
+    {% if role == "auction" %}
+
     <a
-        href="/magicstone"
-        class="btn btn-primary magicstone-btn"
-        style="width:130px;">
-        🔮 매직스톤 계산기
+        href="/auction"
+        class="btn btn-dark"
+        style="width:130px;font-weight:700;">
+        ⚔️ 경매관리
     </a>
 
-    {% if attendance_done %}
-
-    <button
-        class="btn btn-secondary attendance-btn"
-        disabled>
-        ✅ 출석 완료
-    </button>
-
-    {% else %}
-
-    <button
-        class="btn btn-success attendance-btn"
-        type="button"
-        onclick="location.href='/attendance'">
-        📅 출석체크
-    </button>
-
     {% endif %}
+
+    <a href="/mypage" class="btn btn-info w-100">
+        👤 내 페이지
+    </a>
 
     <a
         href="/user_logout"
@@ -968,7 +1046,7 @@ body::before{
         로그아웃
     </a>
 
-</div> 
+</div>
 
 </div>
 
@@ -1042,6 +1120,30 @@ value="1">
 
 </div>
 
+<div class="mt-3">
+
+    <label class="form-label fw-bold">
+        입찰 방식
+    </label>
+
+    <select
+        class="form-select"
+        id="bidType"
+        name="bid_type"
+        onchange="changeBidType()">
+
+        <option value="point">
+            일반 입찰 (기여도)
+        </option>
+
+        <option value="ticket">
+            강화입찰권 사용
+        </option>
+
+    </select>
+
+</div>
+
 <div
     class="mt-3"
     id="contributionBox">
@@ -1061,8 +1163,25 @@ value="1">
     <small
         class="text-muted"
         id="pointGuide">
-        기여도는 0점도 사용 가능하며, 낙찰 우선순위를 결정합니다.
+        기여도는 0점도 사용 가능하며 낙찰 우선순위를 결정합니다.
     </small>
+
+</div>
+
+<div
+    id="ticketGuide"
+    class="alert alert-warning mt-3"
+    style="display:none;">
+
+    <b>🎫 강화입찰권 입찰</b><br>
+
+    장비/악세는 장비·악세 강화입찰권 1장을 사용합니다.<br>
+
+    엠블럼은 엠블럼 강화입찰권 1장을 사용합니다.<br>
+
+    <span class="text-danger">
+        강화입찰권 사용자가 있으면 일반입찰보다 우선 추첨됩니다.
+    </span>
 
 </div>
 
@@ -1583,18 +1702,21 @@ function toggleQuantityBox() {
                 document.querySelector('input[name="quantity"]').value
             ) || 1;
 
-        contributionInput.max = qty;
-        contributionInput.value = 1;   // ⭐ 추가
-        pointGuide.innerText = `기타 최대 ${qty}점`;
+        contributionInput.value = 0;
+        pointGuide.innerText = "기타 품목은 기여도를 사용하지 않습니다.";
     }
 }
 
 itemSelect.addEventListener(
     "change",
-    toggleQuantityBox
+    function(){
+        toggleQuantityBox();
+        changeBidType();
+    }
 );
 
 toggleQuantityBox();
+changeBidType();
 
 
 document
@@ -1695,9 +1817,133 @@ window.addEventListener("load", () => {
 
 {% endif %}
 
+function toggleTicketBox(){
+
+    const box =
+        document.getElementById("ticketBox");
+
+    if(box.style.display==="none"){
+
+        box.style.display="block";
+
+    }else{
+
+        box.style.display="none";
+
+    }
+
+}
+
+async function exchangeTicket(){
+
+    const ticketType =
+        document.getElementById("ticketType").value;
+
+    const form = new FormData();
+
+    form.append(
+        "ticket_type",
+        ticketType
+    );
+
+    const response = await fetch(
+        "/exchange_ticket",
+        {
+            method:"POST",
+            body:form
+        }
+    );
+
+    const result = await response.json();
+
+    alert(result.message);
+
+    if(result.success){
+
+        location.reload();
+
+    }
+
+}
+
+function changeBidType(){
+
+    const bidType =
+        document.getElementById("bidType");
+
+    const contributionBox =
+        document.getElementById("contributionBox");
+
+    const ticketGuide =
+        document.getElementById("ticketGuide");
+
+    const contributionInput =
+        document.getElementById("contributionInput");
+
+    const item =
+        document.getElementById("itemSelect");
+
+    const category =
+        item.options[item.selectedIndex].dataset.category;
+
+    const ticketOption =
+        bidType.querySelector("option[value='ticket']");
+
+    // 기타 품목은 강화입찰권 사용 불가
+    if(category === "기타"){
+
+        bidType.value = "point";
+
+        ticketOption.disabled = true;
+
+    }else{
+
+        ticketOption.disabled = false;
+
+    }
+
+    // 일반입찰 / 강화입찰권 화면 변경
+    if(bidType.value === "ticket"){
+
+        contributionBox.style.display = "none";
+
+        ticketGuide.style.display = "block";
+
+        contributionInput.value = 0;
+
+    }else{
+
+        contributionBox.style.display = "block";
+
+        ticketGuide.style.display = "none";
+
+    }
+
+}
+
+// ==========================
+// 이벤트 등록
+// ==========================
+document
+    .getElementById("itemSelect")
+    .addEventListener(
+        "change",
+        changeBidType
+    );
+
+document
+    .getElementById("bidType")
+    .addEventListener(
+        "change",
+        changeBidType
+    );
+
+// 최초 실행
+changeBidType();
+
 </script>
 
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
