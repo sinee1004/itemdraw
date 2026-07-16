@@ -8,7 +8,7 @@ from fastapi import Form
 
 from database import get_db
 
-from magicstone.engine import Engine, MagicStone
+from magicstone.engine import MagicStone
 from magicstone.optimizer import Optimizer
 
 router = APIRouter(prefix="/magicstone")
@@ -24,9 +24,12 @@ async def calculate(
 
     request: Request,
 
-    target1: str = Form(...),
-    target1_value: float = Form(...),
+    mode: str = Form(...),
+
     target2: str = Form(...),
+
+    target1: str = Form(""),
+    target1_value: float = Form(0),
 
     user: str = Cookie(None)
 
@@ -48,6 +51,12 @@ async def calculate(
     RUNNING_USERS.add(nickname)
 
     try:
+
+        # 단일 목표 계산
+        if mode == "single":
+
+            target1 = target2
+            target1_value = 0
 
         conn = get_db()
 

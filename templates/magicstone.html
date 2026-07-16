@@ -216,23 +216,47 @@
 <div class="row">
 
     <div class="col-md-4">
+        <label>계산 방식</label>
 
-        <label>1차 목표 능력치</label>
+        <select id="mode" name="mode" class="form-select" onchange="changeMode()">
+            <option value="single">단일 목표 최대</option>
+            <option value="condition">조건 + 최대</option>
+        </select>
+    </div>
 
-        <select name="target1" class="form-select">
+    <div class="col-md-4">
+        <label>최대화 능력치</label>
 
+        <select name="target2" class="form-select">
             <option>순격</option>
             <option>강습</option>
             <option>추상</option>
             <option>근성</option>
             <option>방감</option>
             <option>요새</option>
+        </select>
+    </div>
 
+</div>
+
+<div class="row mt-3" id="condition_area" style="display:none;">
+
+    <div class="col-md-6">
+
+        <label>조건 능력치</label>
+
+        <select name="target1" class="form-select">
+            <option>순격</option>
+            <option>강습</option>
+            <option>추상</option>
+            <option>근성</option>
+            <option>방감</option>
+            <option>요새</option>
         </select>
 
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-6">
 
         <label>최소 수치</label>
 
@@ -240,25 +264,8 @@
             type="number"
             step="0.1"
             name="target1_value"
-            class="form-control"
-            required>
-
-    </div>
-
-    <div class="col-md-4">
-
-        <label>2차 목표 능력치 (최대)</label>
-
-        <select name="target2" class="form-select">
-
-            <option>순격</option>
-            <option>강습</option>
-            <option>추상</option>
-            <option>근성</option>
-            <option>방감</option>
-            <option>요새</option>
-
-        </select>
+            value="0"
+            class="form-control">
 
     </div>
 
@@ -436,7 +443,16 @@ async function loadPotentials(){
 }
 
 
+function changeMode(){
 
+    const mode = document.getElementById("mode").value;
+
+    document.getElementById("condition_area").style.display =
+        mode === "condition" ? "flex" : "none";
+
+}
+
+changeMode();
 
 
 
