@@ -90,13 +90,6 @@ class Engine:
         if stone.stat2:
             stat[stone.stat2] = stone.value2
 
-        if stone.potential.endswith("숙달"):
-
-            target = stone.potential.replace("숙달", "").strip()
-
-            # 기본속성이 없어도 숙달은 해당 능력치에 추가
-            stat[target] = stat.get(target, 0) + stone.potential_value
-
         return stat
 
   
@@ -136,7 +129,7 @@ class Engine:
         return final
 
     def calculate(self):
-                
+
         resonance_bonus = self.apply_resonance()
 
         result = defaultdict(float)
@@ -155,6 +148,7 @@ class Engine:
 
         for i, stone in enumerate(self.stones):
 
+            # 기본속성만
             stat = self.apply_mastery(stone)
 
             rate = resonance_bonus[i]
@@ -164,12 +158,13 @@ class Engine:
                 for k in stat:
                     stat[k] *= rate
 
+            # 단련, 붉은빛집중 등은 기본속성만 적용
             stat = self.apply_base_potential(
                 stone,
                 stat
             )
-            
 
+            # 기본속성 합산
             for key, value in stat.items():
 
                 if key.endswith("보너스%"):
@@ -180,12 +175,26 @@ class Engine:
 
                     result[key] += value
 
+            # ==========================
+            # 숙달은 마지막에 그대로 더한다
+            # ==========================
+            if stone.potential.endswith("숙달"):
+
+                target = stone.potential.replace("숙달", "").strip()
+
+                mastery = stone.potential_value
+
+                # 잠재력공명만 적용
+                if rate != 1:
+                    mastery *= rate
+
+                result[target] += mastery
+
+        # %보너스 적용
         for target in [
 
             "순격",
-
             "강습",
-
             "추상"
 
         ]:
@@ -202,9 +211,9 @@ class Engine:
 
                 )
 
+        # 증폭
         result = self.apply_amplify(result)
- 
-           
+
         return dict(result)
     
     def apply_base_potential(self, stone, stat):
