@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
+from fastapi import Form
 
 from database import get_db
 
@@ -18,11 +19,15 @@ templates = Jinja2Templates(directory="templates")
 RUNNING_USERS = set()
 
 
-@router.get("/calculate/{target}")
+@router.post("/calculate")
 async def calculate(
 
     request: Request,
-    target: str,
+
+    target1: str = Form(...),
+    target1_value: float = Form(...),
+    target2: str = Form(...),
+
     user: str = Cookie(None)
 
 ):
@@ -32,7 +37,6 @@ async def calculate(
 
     nickname = unquote(user)
 
-    # 이미 계산 중인 경우
     if nickname in RUNNING_USERS:
         return HTMLResponse("""
         <script>
@@ -98,7 +102,9 @@ async def calculate(
         optimizer = Optimizer(stones)
 
         best_value, best_team = optimizer.find_best(
-            target,
+            target1,
+            target1_value,
+            target2,
             setting
         )
 
@@ -110,7 +116,9 @@ async def calculate(
 
             context={
 
-                "target": target,
+                "target": target2,
+                "condition_target": target1,
+                "condition_value": target1_value,
                 "value": round(best_value, 2),
                 "team": best_team
 
@@ -119,11 +127,11 @@ async def calculate(
         )
 
     finally:
-        # 계산 종료 시 반드시 해제
+
         RUNNING_USERS.discard(nickname)
 
 
 @router.get("/calculate")
 async def calculate_all():
 
-    return RedirectResponse("/magicstone/calculate/순격", status_code=302)
+    return RedirectResponse("/magicstone", status_code=302)

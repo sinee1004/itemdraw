@@ -1634,10 +1634,28 @@ async function loadEntries() {
 
         data.entries.forEach(row => {
 
+            let bidText = "";
+
+            if (row.ticket_type === "equipment") {
+
+                bidText = "🎫 장비/악세 강화입찰권";
+
+            }
+            else if (row.ticket_type === "emblem") {
+
+                bidText = "🎫 엠블럼 강화입찰권";
+
+            }
+            else {
+
+                bidText = "⭐ " + row.contribution_used;
+
+            }
+
             html += `
             <tr>
                 <td>${row.item_name}</td>
-                <td>⭐ ${row.contribution_used}</td>
+                <td>${bidText}</td>
                 <td>${row.entry_number}</td>
                 <td>
                     <button

@@ -21,6 +21,7 @@ from database import get_db
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from typing import List, Optional
+from fastapi import Query
 
 # 라우터
 from routers import magicstone
@@ -423,14 +424,22 @@ def run_draw():
                 else:
                     point_users.append(a)
 
-            # 강화입찰권 사용자가 있으면
+            
+            # ==========================
+            # 강화입찰권 신청자 우선
+            # ==========================
+
+            selected = []
+
             if ticket_users:
 
                 random.shuffle(ticket_users)
 
-                selected = ticket_users[:item_quantity]
+                ticket_selected = ticket_users[:item_quantity]
 
-                for winner in selected:
+                selected.extend(ticket_selected)
+
+                for winner in ticket_selected:
 
                     cur.execute(
                         """
@@ -466,6 +475,11 @@ def run_draw():
                         """,
                         (winner[0],))
 
+            # 남은 수량
+            remain_count = item_quantity - len(selected)
+
+            # 티켓으로 모두 채워졌으면 끝
+            if remain_count <= 0:
                 continue
 
             # ==========================
@@ -481,11 +495,11 @@ def run_draw():
                 reverse=True
             )
 
-            selected = []
+            point_selected = []
 
             remaining = applicants
 
-            while len(selected) < item_quantity and remaining:
+            while len(point_selected) < remain_count and remaining:
 
                 highest = remaining[0][3]
 
@@ -496,21 +510,22 @@ def run_draw():
 
                 random.shuffle(same_score)
 
-                need = item_quantity - len(selected)
+                need = remain_count - len(point_selected)
 
-                selected.extend(same_score[:need])
+                point_selected.extend(same_score[:need])
 
-                selected_names = {
+                point_selected_names = {
                     (x[0], x[2]) for x in same_score[:need]
                 }
 
                 remaining = [
                     a for a in remaining
-                    if (a[0], a[2]) not in selected_names
+                    if (a[0], a[2]) not in point_selected_names
                 ]
 
+            
             # 당첨자 저장 + 기여도 차감
-            for winner in selected:
+            for winner in point_selected:
 
                 cur.execute(
                     """
@@ -1550,11 +1565,14 @@ async def admin(
         nickname,
         item_name,
         entry_number,
-        contribution_used
+        contribution_used,
+        ticket_type
     FROM entries
-    ORDER BY item_name ASC,
-             contribution_used DESC,
-             nickname ASC
+    ORDER BY
+        item_name ASC,
+        CASE WHEN ticket_type <> '' THEN 1 ELSE 0 END DESC,
+        contribution_used DESC,
+        nickname ASC
     """)
     entries = cur.fetchall()
 
@@ -1637,15 +1655,19 @@ async def admin(
 
                     print("AUTO REVEAL START")
 
-                    run_draw()
-
                     cur.execute("""
                     UPDATE auction_settings
                     SET status='revealed'
                     WHERE id=1
+                    AND status='running'
                     """)
 
                     conn.commit()
+
+                    # running → revealed 로 변경된 경우에만 추첨 실행
+                    if cur.rowcount == 1:
+
+                        run_draw()
 
                     auction_status = "개찰완료"
 
@@ -1760,21 +1782,56 @@ async def auction(
         WHERE id=1
         """)
 
-        auction = cur.fetchone()
+        row = cur.fetchone()
 
-        if auction:
+        if row:
 
-            status = auction[0]
-            auction_end_time = auction[1] or ""
+            status = row[0]
+            auction_end_time = row[1] or ""
 
-            if status == "running":
-                auction_status = "진행중"
+            if status == "running" and auction_end_time:
+
+                end_dt = datetime.strptime(
+                    auction_end_time,
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+                now_dt = datetime.now(
+                    ZoneInfo("Asia/Seoul")
+                ).replace(tzinfo=None)
+
+                if now_dt >= end_dt:
+
+                    cur.execute("""
+                    UPDATE auction_settings
+                    SET status='revealed'
+                    WHERE id=1
+                    AND status='running'
+                    """)
+
+                    conn.commit()
+
+                    # running → revealed 로 실제 변경된 경우만 추첨
+                    if cur.rowcount == 1:
+                        run_draw()
+
+                    auction_status = "개찰완료"
+
+                else:
+
+                    auction_status = "진행중"
 
             elif status == "revealed":
+
                 auction_status = "개찰완료"
 
-    except:
-        pass
+            else:
+
+                auction_status = "종료"
+
+    except Exception as e:
+
+        print("AUCTION ERROR =", e)
 
     conn.close()
 
@@ -2032,6 +2089,7 @@ async def update_item(
 
 @app.get("/reset_all")
 async def reset_all(
+    from_page: str = Query("admin"),
     admin: str = Cookie(None),
     user: str = Cookie(None)
 ):
@@ -2075,10 +2133,11 @@ async def reset_all(
     conn.commit()
     conn.close()
 
-    if admin == "yes":
-        return RedirectResponse("/admin", status_code=303)
+    # 버튼을 누른 페이지로 다시 이동
+    if from_page == "auction":
+        return RedirectResponse("/auction", status_code=303)
 
-    return RedirectResponse("/auction", status_code=303)
+    return RedirectResponse("/admin", status_code=303)
 
 @app.post("/my_entries")
 async def my_entries(
@@ -2099,7 +2158,8 @@ async def my_entries(
             id,
             item_name,
             entry_number,
-            contribution_used
+            contribution_used,
+            ticket_type
         FROM entries
         WHERE nickname=?
         ORDER BY id DESC
@@ -2117,7 +2177,8 @@ async def my_entries(
                 "id": row[0],
                 "item_name": row[1],
                 "entry_number": row[2],
-                "contribution_used": row[3]
+                "contribution_used": row[3],
+                "ticket_type": row[4]
             }
             for row in rows
         ]
@@ -2274,9 +2335,12 @@ async def delete_entry(
 async def start_auction(
     reveal_minutes: int = Form(...),
     auto_reveal: int = Form(...),
+    from_page: str = Form(...),
     admin: str = Cookie(None),
     user: str = Cookie(None)
 ):
+
+    role = "admin"
 
     # 관리자 또는 경매관리자만 가능
     if admin != "yes":
@@ -2301,6 +2365,8 @@ async def start_auction(
 
         if not row or row[0] != "auction":
             return RedirectResponse("/", status_code=303)
+
+        role = row[0]
 
     conn = get_db()
     cur = conn.cursor()
@@ -2346,11 +2412,16 @@ async def start_auction(
     conn.commit()
     conn.close()
 
-    # 어디서 실행했는지에 따라 돌아갈 페이지
-    if admin == "yes":
-        return RedirectResponse("/admin", status_code=303)
+    print("admin =", admin)
+    print("user =", user)
+    print("role =", role)
+    print("from_page =", from_page)
 
-    return RedirectResponse("/auction", status_code=303)
+    # 버튼을 누른 페이지로 다시 이동
+    if from_page == "auction":
+        return RedirectResponse("/auction", status_code=303)
+
+    return RedirectResponse("/admin", status_code=303)
 
 
 @app.post("/reveal_auction")
@@ -2616,13 +2687,20 @@ async def countdown():
 
     conn.close()
 
-    if not row or row[0] != "running":
+    if not row:
+        return {
+            "running": False
+        }
+
+    status = row["status"]
+
+    if status != "running":
         return {
             "running": False
         }
 
     end = datetime.strptime(
-        row[1],
+        row["end_time"],
         "%Y-%m-%d %H:%M:%S"
     ).replace(
         tzinfo=ZoneInfo("Asia/Seoul")
@@ -2634,8 +2712,11 @@ async def countdown():
 
     diff = int((end - now).total_seconds())
 
-    if diff < 0:
-        diff = 0
+    if diff <= 0:
+
+        return {
+            "running": False
+        }
 
     return {
         "running": True,

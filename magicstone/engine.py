@@ -1,11 +1,4 @@
 from collections import defaultdict
-from copy import deepcopy
-
-
-
-
-
-
 
 class MagicStone:
 
@@ -40,7 +33,7 @@ class Engine:
 
     def __init__(self, stones, setting=None):
 
-        self.stones = deepcopy(stones)
+        self.stones = list(stones)
 
         self.setting = setting
 
@@ -48,17 +41,15 @@ class Engine:
         self.grade_count = defaultdict(int)
         self.potential_count = defaultdict(int)
 
-    def count(self):
+    
+            
+    def set_team(self, stones, shape_count, grade_count, potential_count):
 
-        self.shape_count.clear()
-        self.grade_count.clear()
-        self.potential_count.clear()
+        self.stones = stones
 
-        for stone in self.stones:
-
-            self.shape_count[stone.shape] += 1
-            self.grade_count[stone.grade] += 1
-            self.potential_count[stone.potential] += 1
+        self.shape_count = shape_count
+        self.grade_count = grade_count
+        self.potential_count = potential_count
 
     def apply_resonance(self):
 
@@ -69,7 +60,11 @@ class Engine:
             if stone.potential == "잠재력공명":
                 resonance.append((i, stone.potential_value))
 
+        bonus = [1.0] * len(self.stones)
+
         for index, value in resonance:
+
+            rate = 1 + value / 100
 
             for i, stone in enumerate(self.stones):
 
@@ -79,9 +74,9 @@ class Engine:
                 if stone.potential == "잠재력공명":
                     continue
 
-                stone.potential_value *= (
-                    1 + value / 100
-                )
+                bonus[i] *= rate
+
+        return bonus
 
                 
 
@@ -128,7 +123,7 @@ class Engine:
 
             if stat in final:
 
-                before = final[stat]
+                
 
                 final[stat] *= (1 + value / 100)
 
@@ -141,12 +136,8 @@ class Engine:
         return final
 
     def calculate(self):
-
-        
-
-        self.count()
-
-        self.apply_resonance()
+                
+        resonance_bonus = self.apply_resonance()
 
         result = defaultdict(float)
 
@@ -162,14 +153,20 @@ class Engine:
 
         bonus = defaultdict(float)
 
-        for stone in self.stones:
+        for i, stone in enumerate(self.stones):
 
             stat = self.apply_mastery(stone)
+
+            rate = resonance_bonus[i]
+
+            if rate != 1:
+
+                for k in stat:
+                    stat[k] *= rate
 
             stat = self.apply_base_potential(
                 stone,
                 stat
-                
             )
             
 
@@ -213,7 +210,7 @@ class Engine:
     def apply_base_potential(self, stone, stat):
 
         category = stone.potential
-        before = stat.copy()
+        
 
         if category == "매직스톤단련":
 

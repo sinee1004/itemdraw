@@ -27,11 +27,31 @@
 
             <div class="row text-center">
 
-                <div class="col-md-6">
+                <div class="col-md-4">
 
                     <div class="alert alert-primary">
 
-                        <h5>목표 능력치</h5>
+                        <h5>1차 조건</h5>
+
+                        <h4>
+
+                            {{ condition_target }}
+
+                            ≥
+
+                            {{ condition_value }}
+
+                        </h4>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="alert alert-info">
+
+                        <h5>최대화 능력치</h5>
 
                         <h2>{{ target }}</h2>
 
@@ -39,7 +59,7 @@
 
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-4">
 
                     <div class="alert alert-success">
 
@@ -159,7 +179,7 @@
 
             <a
 
-                href="/"
+                href="/magicstone"
 
                 class="btn btn-primary w-100">
 

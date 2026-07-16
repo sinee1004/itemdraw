@@ -109,6 +109,7 @@ class="btn btn-secondary">
     </div>
 
         <form action="/start_auction" method="post">
+        <input type="hidden" name="from_page" value="admin">
 
             <div class="row">
 
@@ -370,7 +371,15 @@ class="btn btn-secondary">
 
 <td>{{ row[1] }}</td>
 <td>{{ row[2] }}</td>
-<td>{{ row[4] }}점</td>
+<td>
+{% if row[5] == "equipment" %}
+    🎫 장비/악세 강화입찰권
+{% elif row[5] == "emblem" %}
+    🎫 엠블럼 강화입찰권
+{% else %}
+    {{ row[4] }}점
+{% endif %}
+</td>
 <td>{{ row[3] }}</td>
 
 

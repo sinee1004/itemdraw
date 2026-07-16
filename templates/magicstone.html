@@ -209,13 +209,17 @@
 
 <hr>
 
+<hr>
+
+<form action="/magicstone/calculate" method="post">
+
 <div class="row">
 
-    <div class="col-md-6">
+    <div class="col-md-4">
 
-        <label>목표 능력치</label>
+        <label>1차 목표 능력치</label>
 
-        <select id="target" class="form-select">
+        <select name="target1" class="form-select">
 
             <option>순격</option>
             <option>강습</option>
@@ -228,20 +232,47 @@
 
     </div>
 
-    <div class="col-md-6 d-flex align-items-end">
+    <div class="col-md-4">
 
-        <a
-            id="calculate_btn"
-            href="/magicstone/calculate/순격"
-            class="btn btn-success w-100">
+        <label>최소 수치</label>
 
-            최적 조합 계산
+        <input
+            type="number"
+            step="0.1"
+            name="target1_value"
+            class="form-control"
+            required>
 
-        </a>
+    </div>
+
+    <div class="col-md-4">
+
+        <label>2차 목표 능력치 (최대)</label>
+
+        <select name="target2" class="form-select">
+
+            <option>순격</option>
+            <option>강습</option>
+            <option>추상</option>
+            <option>근성</option>
+            <option>방감</option>
+            <option>요새</option>
+
+        </select>
 
     </div>
 
 </div>
+
+<button
+    id="calculate_btn"
+    class="btn btn-success w-100 mt-3">
+
+    최적 조합 계산
+
+</button>
+
+</form>
 
 <hr>
 
@@ -376,12 +407,6 @@ window.onload = async function(){
 
     await loadNames();
 
-    
-
-    document
-    .getElementById("calculate_btn")
-    .href="/magicstone/calculate/"+document.getElementById("target").value;
-
 };
 
 async function loadPotentials(){
@@ -415,15 +440,7 @@ async function loadPotentials(){
 
 
 
-document
-.getElementById("target")
-.addEventListener("change",function(){
 
-    document
-    .getElementById("calculate_btn")
-    .href="/magicstone/calculate/"+this.value;
-
-});
 
 document.getElementById("calculate_btn").addEventListener("click", function (e) {
 

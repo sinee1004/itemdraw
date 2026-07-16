@@ -1,5 +1,5 @@
 
-
+from collections import defaultdict
 from magicstone.engine import Engine
 
 
@@ -7,23 +7,43 @@ class Optimizer:
 
     def __init__(self, stones):
 
-        self.stones = stones
+        self.all_stones = stones
 
     
 
-    def find_best(self, target, setting=None):
+    def find_best(
+
+        self,
+
+        target1,
+        target1_value,
+        target2,
+
+        setting=None
+
+    ):
 
         self.setting = setting
         self.best_value = -1
         self.best_team = []
-        self.target = target
+
+        self.condition_target = target1
+        self.condition_value = target1_value
+        self.target = target2
         self.checked = 0
+
+        # 원본 스톤 목록 복원
+        self.stones = list(self.all_stones)
 
         # 목표 능력치와 관련된 스톤만 추출
         self.stones = [
             stone
             for stone in self.stones
-            if self.is_target_related(stone, target)
+            if (
+                self.is_target_related(stone, target1)
+                or
+                self.is_target_related(stone, target2)
+            )
         ]
 
         best_stones = {}
@@ -43,7 +63,33 @@ class Optimizer:
 
         self.stones = list(best_stones.values())
 
-                
+        # 목표 능력치와 관련성이 높은 스톤부터 탐색
+        self.stones.sort(
+
+            key=lambda stone: (
+
+                (
+                    (stone.value1 if self.target in stone.stat1 else 0) +
+                    (stone.value2 if self.target in stone.stat2 else 0)
+                ),
+
+                (
+                    stone.potential_value
+                    if self.target in stone.potential
+                    else 0
+                ),
+
+                stone.value1 + stone.value2
+
+            ),
+
+            reverse=True
+
+        )
+
+        # Engine는 한 번만 생성
+        self.engine = Engine([], self.setting)
+
         self.search(
 
             index=0,
@@ -53,19 +99,23 @@ class Optimizer:
             name_set=set(),
 
             shape_count={
+                "원":0,
+                "세모":0,
+                "다이아":0,
+                "육각":0,
+                "별":0,
+                "달":0
+            },
 
-                "원": 0,
-                "세모": 0,
-                "다이아": 0,
-                "육각": 0,
-                "별": 0,
-                "달": 0
+            grade_count={
+                "에픽":0,
+                "전설":0,
+                "신화":0
+            },
 
-            }
+            potential_count=defaultdict(int)
 
         )
-
-        
 
         return self.best_value, self.best_team
 
@@ -85,7 +135,11 @@ class Optimizer:
 
         ]:
 
-            value, team = self.find_best(target)
+            value, team = self.find_best(
+                target,
+                0,
+                target
+            )
 
             result[target] = {
 
@@ -107,7 +161,11 @@ class Optimizer:
 
         name_set,
 
-        shape_count
+        shape_count,
+
+        grade_count,
+
+        potential_count
 
     ):
 
@@ -116,9 +174,24 @@ class Optimizer:
 
             self.checked += 1
 
-            engine = Engine(team, self.setting)
+            self.engine.set_team(
 
-            result = engine.calculate()
+                team,
+
+                shape_count,
+
+                grade_count,
+
+                potential_count
+
+            )
+
+            result = self.engine.calculate()
+
+            condition = result.get(self.condition_target, 0)
+
+            if condition < self.condition_value:
+                return
 
             value = result.get(self.target, 0)
 
@@ -145,24 +218,32 @@ class Optimizer:
             team.append(stone)
             name_set.add(stone.name)
             shape_count[stone.shape] += 1
+            grade_count[stone.grade] += 1
+            potential_count[stone.potential] += 1
 
             self.search(
                 index + 1,
                 team,
                 name_set,
-                shape_count
+                shape_count,
+                grade_count,
+                potential_count
             )
 
             team.pop()
             name_set.remove(stone.name)
             shape_count[stone.shape] -= 1
+            grade_count[stone.grade] -= 1
+            potential_count[stone.potential] -= 1
 
         # 선택 안함
         self.search(
             index + 1,
             team,
             name_set,
-            shape_count
+            shape_count,
+            grade_count,
+            potential_count
         )
 
     def is_target_related(self, stone, target):

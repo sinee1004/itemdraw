@@ -191,7 +191,7 @@ async def add_stone(
 
         conn.execute(
             "DELETE FROM magic_user_stones WHERE id=?",
-            (row["id"],)
+            (rows[0]["id"],)
         )
 
     # 현재 보유 개수 확인

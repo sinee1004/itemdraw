@@ -22,7 +22,7 @@ rel="stylesheet">
 
 <div class="container mt-4">
 
-<h1>⚙ 경매관리 테스트</h1>
+<h1>⚙ 경매관리</h1>
 
 
 
@@ -33,10 +33,11 @@ rel="stylesheet">
 class="btn btn-success">
 🏆 결과 보기 </a>
 
-<a href="/reset_all"
-class="btn btn-danger"
-onclick="return confirm('품목, 신청자, 당첨결과를 모두 삭제하시겠습니까?')">
-🗑 전체 초기화 </a>
+<a href="/reset_all?from_page=auction"
+   class="btn btn-danger"
+   onclick="return confirm('품목, 신청자, 당첨결과를 모두 삭제하시겠습니까?')">
+    🗑 전체 초기화
+</a>
 
 <a href="/" class="btn btn-secondary">
 ← 뒤로가기
@@ -67,6 +68,7 @@ onclick="return confirm('품목, 신청자, 당첨결과를 모두 삭제하시�
     </div>
 
         <form action="/start_auction" method="post">
+        <input type="hidden" name="from_page" value="auction">    
 
             <div class="row">
 
@@ -327,63 +329,50 @@ onclick="return confirm('삭제하시겠습니까?')">
 
 
 
-const endTime = "{{ auction_end_time }}";
+let reloaded = false;
 
-console.log("endTime =", endTime);
+async function updateCountdown() {
 
-if (
-    endTime &&
-    "{{ auction_status }}" === "진행중"
-) {
+    try {
 
-    function updateCountdown() {
+        const res = await fetch("/countdown");
+        const data = await res.json();
 
-        const end = new Date(
-            endTime.replace(" ", "T")
-        );
+        if (!data.running) {
 
-        const now = new Date();
+            document.getElementById("countdown").innerText = "-";
 
-        const diff = end - now;
+            // 진행중이던 경매가 종료되면 한 번만 새로고침
+            if (
+                !reloaded &&
+                "{{ auction_status }}" === "진행중"
+            ) {
 
-        if (diff <= 0) {
+                reloaded = true;
 
-            location.reload();
+                location.reload();
+
+            }
 
             return;
         }
 
-        const minutes = Math.floor(
-            diff / 1000 / 60
-        );
+        document.getElementById("countdown").innerText =
+            String(data.minutes).padStart(2, "0")
+            + ":"
+            + String(data.seconds).padStart(2, "0");
 
-        const seconds = Math.floor(
-            (diff / 1000) % 60
-        );
+    } catch (e) {
 
-        document.getElementById(
-            "countdown"
-        ).innerText =
-            String(minutes).padStart(2, "0")
-            + ":" +
-            String(seconds).padStart(2, "0");
+        console.error(e);
+
     }
 
-    updateCountdown();
-
-    setInterval(
-        updateCountdown,
-        1000
-    );
-
 }
-else {
 
-    document.getElementById(
-        "countdown"
-    ).innerText = "-";
+updateCountdown();
 
-}
+setInterval(updateCountdown, 1000);
 
 </script>
 
