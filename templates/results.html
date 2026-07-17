@@ -1,4 +1,4 @@
-d<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 
 <head>
@@ -269,11 +269,23 @@ id="etc">
 </button>
 </a>
 
+{% if role == "admin" %}
+
 <a href="/admin">
 <button class="btn btn-success">
 관리자 페이지
 </button>
 </a>
+
+{% elif role == "auction_manager" %}
+
+<a href="/auction_manager">
+<button class="btn btn-success">
+경매관리 페이지
+</button>
+</a>
+
+{% endif %}
 
 </div>
 

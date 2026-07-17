@@ -1865,11 +1865,32 @@ async def draw(
         status_code=303
     )
 
+from urllib.parse import unquote
+
+
 @app.get("/results", response_class=HTMLResponse)
 async def results(request: Request):
 
     conn = get_db()
     cur = conn.cursor()
+
+    # 사용자 역할 확인
+    role = None
+    user = request.cookies.get("user")
+
+    if user:
+        decoded_user = unquote(user)
+
+        cur.execute("""
+        SELECT role
+        FROM users
+        WHERE nickname=?
+        """, (decoded_user,))
+
+        row = cur.fetchone()
+
+        if row:
+            role = row[0]
 
     cur.execute("""
     SELECT
@@ -1954,7 +1975,8 @@ async def results(request: Request):
             "equipment": equipment,
             "accessory": accessory,
             "emblem": emblem,
-            "etc_items": etc_items
+            "etc_items": etc_items,
+            "role": role
         }
     )
 
