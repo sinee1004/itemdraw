@@ -815,6 +815,46 @@ async def user_logout():
 
     return response
 
+@app.get("/user_logout")
+async def user_logout():
+
+    response = RedirectResponse(
+        "/",
+        status_code=303
+    )
+
+    response.delete_cookie("user")
+
+    return response
+
+
+# ===========================
+# 경매방식 안내
+# ===========================
+
+@app.get("/guide", response_class=HTMLResponse)
+async def guide():
+
+    return """
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>경매 방식 안내</title>
+</head>
+
+<body style="margin:0;background:#202020;text-align:center;">
+
+<img src="/static/3.png" style="width:100%;max-width:900px;display:block;margin:auto;">
+<img src="/static/2.png" style="width:100%;max-width:900px;display:block;margin:auto;">
+
+</body>
+</html>
+"""
+
+
+
+
 @app.get("/attendance")
 async def attendance(
     user: str = Cookie(None)
@@ -3241,3 +3281,4 @@ async def refund_ticket(
         "success": True,
         "message": "강화입찰권이 환불되었습니다."
     })
+

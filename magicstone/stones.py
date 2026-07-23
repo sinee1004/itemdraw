@@ -449,3 +449,27 @@ async def save_setting(
     conn.close()
 
     return RedirectResponse("/magicstone", status_code=303)
+
+@router.get("/stone/delete_all")
+async def delete_all_stones(user: str = Cookie(None)):
+
+    if not user:
+        return RedirectResponse("/user_login", status_code=303)
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    decoded_user = unquote(user)
+
+    cur.execute("""
+        DELETE FROM magic_user_stones
+        WHERE nickname=?
+    """, (decoded_user,))
+
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(
+        "/magicstone?message=delete_all",
+        status_code=303
+    )

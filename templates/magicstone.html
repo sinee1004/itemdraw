@@ -41,6 +41,12 @@
 </div>
 {% endif %}
 
+{% if message == "delete_all" %}
+<div class="alert alert-success">
+    ✅ 등록된 모든 매직스톤이 삭제되었습니다.
+</div>
+{% endif %}
+
 <div class="mb-3">
     <a href="/" class="btn btn-secondary">
         ← 메인으로 돌아가기
@@ -294,6 +300,13 @@
 
         🧹 매직스톤 자동정리
 
+    </a>
+
+    <a
+        href="/magicstone/stone/delete_all"
+        class="btn btn-danger"
+        onclick="return confirm('등록된 모든 매직스톤을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')">
+        🗑️ 매직스톤 전체 삭제
     </a>
 
 </div>
